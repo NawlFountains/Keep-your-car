@@ -4,19 +4,34 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MaintenanceLogDao {
     @Query("SELECT * FROM maintenance_log")
-    fun getAll(): List<MaintenanceLog>
+    fun getAll(): Flow<List<MaintenanceLog>>
+
+    @Query("SELECT * FROM maintenance_log ORDER BY date DESC LIMIT :amount")
+    fun getLatestMaintenanceLogs(amount: Int): Flow<List<MaintenanceLog>>
+
+    @Query("SELECT * FROM maintenance_log WHERE item_changed = :itemChanged and date = :date")
+    fun getByItemChangedAndDate(itemChanged: String, date: String): MaintenanceLog?
+
+    @Query("SELECT * FROM maintenance_log WHERE date = :date")
+    fun getByDate(date: Long): List<MaintenanceLog>
 
     @Insert
-    fun insert(maintenanceLog: MaintenanceLog)
+    suspend fun insert(maintenanceLog: MaintenanceLog)
 
     @Insert
     fun insertAll(vararg maintenanceLogs: MaintenanceLog)
 
+    @Update
+    suspend fun update (maintenanceLog: MaintenanceLog)
+
+
     @Delete
-    fun delete (maintenanceLog: MaintenanceLog)
+    suspend fun delete (maintenanceLog: MaintenanceLog)
 }
