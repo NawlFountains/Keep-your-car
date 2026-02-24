@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -109,7 +108,6 @@ fun PopUpButton () {
     var showMaintenanceLogForm by remember { mutableStateOf(false) }
     var showFuelLogForm by remember { mutableStateOf(false) }
     var showTripLogForm by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     Box {
         FloatingActionButton(
@@ -217,6 +215,8 @@ fun TripLogForm(onDismiss: () -> Unit) {
     var endLocation by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var distance by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("km") }
+    var showUnitMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -244,14 +244,49 @@ fun TripLogForm(onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
         )
-        TextField(
-            value = distance,
-            onValueChange = { distance = it },
-            label = { Text("Distance") },
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = distance,
+                onValueChange = { distance = it },
+                label = { Text("Distance") },
+                modifier = Modifier.weight(1f)
+            )
+
+            Box {
+                Text(
+                    text = unit,
+                    modifier = Modifier
+                        .clickable { showUnitMenu = true }
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                DropdownMenu(
+                    expanded = showUnitMenu,
+                    onDismissRequest = { showUnitMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("km") },
+                        onClick = {
+                            unit = "km"
+                            showUnitMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("miles") },
+                        onClick = {
+                            unit = "miles"
+                            showUnitMenu = false
+                        }
+                    )
+                }
+            }
+
+        }
         TextField(
             value = date,
             onValueChange = { date = it },
@@ -430,10 +465,10 @@ fun FuelLogForm(onDismiss: () -> Unit) {
 fun MaintenanceLogForm(onDismiss: () -> Unit) {
     var itemChanged by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
     var mileage by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("km") }
+    var showUnitMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -461,30 +496,49 @@ fun MaintenanceLogForm(onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
         )
-        TextField(
-            value = mileage,
-            onValueChange = { mileage = it },
-            label = { Text("Mileage") },
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        TextField(
-            value = quantity,
-            onValueChange = { quantity = it },
-            label = { Text("Quantity") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        TextField(
-            value = unit,
-            onValueChange = { unit = it },
-            label = { Text("Unit") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = mileage,
+                onValueChange = { mileage = it },
+                label = { Text("Mileage") },
+                modifier = Modifier.weight(1f)
+            )
+
+            Box {
+                Text(
+                    text = unit,
+                    modifier = Modifier
+                        .clickable { showUnitMenu = true }
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                DropdownMenu(
+                    expanded = showUnitMenu,
+                    onDismissRequest = { showUnitMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("km") },
+                        onClick = {
+                            unit = "km"
+                            showUnitMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("miles") },
+                        onClick = {
+                            unit = "miles"
+                            showUnitMenu = false
+                        }
+                    )
+                }
+            }
+
+        }
         TextField(
             value = notes,
             onValueChange = { notes = it },
