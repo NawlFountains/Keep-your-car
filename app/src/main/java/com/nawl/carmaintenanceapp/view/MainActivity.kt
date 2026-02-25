@@ -1,77 +1,50 @@
 package com.nawl.carmaintenanceapp.view
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.CarRepair
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.nawl.carmaintenanceapp.MainApplication
-import com.nawl.carmaintenanceapp.MaintenanceLogFormState
-import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
+import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
+import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
-import java.sql.Date
+import com.nawl.carmaintenanceapp.viewmodel.TripViewModel
+import com.nawl.carmaintenanceapp.viewmodel.TripViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.TimeZone
 
 class MainActivity : ComponentActivity() {
-
     private val maintenanceViewModel: MaintenanceViewModel by viewModels {
         MaintenanceViewModelFactory((application as MainApplication).database.maintenanceLogDao())
     }
+    private val tripViewModel: TripViewModel by viewModels {
+        TripViewModelFactory((application as MainApplication).database.tripLogDao())
+    }
+    private val fuelViewModel: FuelViewModel by viewModels {
+        FuelViewModelFactory((application as MainApplication).database.fuelLogDao())
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,818 +52,91 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CarMaintenanceAppTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Scaffold(
-                        floatingActionButton = { PopUpButton(maintenanceViewModel) },
-                        floatingActionButtonPosition = FabPosition.End
-                    ) { innerPadding ->
-                        LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))
-                    }
-
-                }
+                NavBar(maintenanceViewModel, tripViewModel, fuelViewModel)
             }
         }
     }
+}
+sealed class Screen(
+    val route: String,
+    val icon: ImageVector
+) {
+    object Home : Screen("home", Icons.Default.Home)
+    object MaintenanceLogs : Screen("maintenance logs", Icons.Default.CarRepair)
+    object TripLogs : Screen("trip logs", Icons.Default.Map)
+    object FuelLogs : Screen("fuel logs", Icons.Default.LocalGasStation)
 }
 
 var formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 //TODO fix timezone showing a day before
-var maintenanceGridColumns = 11
-var maintenanceGridLineSpan = 3
 
 @Composable
-fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: MaintenanceViewModel, modifier: Modifier = Modifier) {
-    val latestMaintenanceLogs by maintenanceViewModel.getLatestMaintenanceLogs(maxLatestLogs).collectAsState(initial = emptyList())
-
-    Box(
-        Modifier.background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(
-            modifier = modifier) {
-            if (latestMaintenanceLogs.isEmpty()) {
-                Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
-                return
-            } else {
-                Text("Latest maintenance logs:", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(count = maintenanceGridColumns),
-                    Modifier.padding(8.dp)
-                ){
-                    val modifier = Modifier.padding(8.dp)
-                    items(1, span =  { GridItemSpan(maintenanceGridLineSpan) }) {
-                        Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                    }
-                    items(1, span =  { GridItemSpan(maintenanceGridLineSpan) }) {
-                        Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                    }
-                    items(1, span =  { GridItemSpan(maintenanceGridLineSpan) }) {
-                        Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                    }
-
-                }
-            }
-            latestMaintenanceLogs.forEach { maintenanceLog ->
-                MaintenanceLogCard(maintenanceLog, maintenanceViewModel)
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun LatestMaintenanceLogsCardsPreview() {
-    val latestMaintenanceLogs = dummyLatestMaintenanceLogs()
-
-    Column(modifier = Modifier.padding(2.dp)) {
-        if (latestMaintenanceLogs.isEmpty()) {
-            Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
-            return
-        } else {
-            Text("Latest maintenance logs:", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(count = maintenanceGridColumns),
-                Modifier.padding(8.dp)
-            ){
-                val modifier = Modifier.padding(8.dp)
-                items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                    Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                }
-                items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                    Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                }
-                items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                    Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                }
-
-            }
-        }
-        latestMaintenanceLogs.forEach { maintenanceLog ->
-//            MaintenanceLogCard(maintenanceLog, null)
-        }
-    }
-}
-
-fun dummyLatestMaintenanceLogs(): List<MaintenanceLog> {
-    val maintenanceLogs = listOf(
-        MaintenanceLog(
-            itemChanged = "Battery",
-            date = Date(2023, 1, 1),
-            mileage = 1633,
-            unit = "km",
-            notes = "No notes"
-        ),
-        MaintenanceLog(
-            itemChanged = "Washer pump",
-            date = Date(2023, 1, 1),
-            mileage = 851923,
-            unit = "km",
-            notes = "No notes"
-        ),
-        MaintenanceLog(
-            itemChanged = "Engine",
-            date = Date(2023, 1, 1),
-            mileage = 1633,
-            unit = "km",
-            notes = "No notes"
-        ))
-    return maintenanceLogs
-}
-
-@Composable
-fun MaintenanceLogCard(maintenanceLog: MaintenanceLog, maintenanceViewModel: MaintenanceViewModel) {
-    val modifier = Modifier.padding(8.dp)
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(count = maintenanceGridColumns),
-        verticalArrangement = Arrangement.Center,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        items(1, span = { GridItemSpan(maintenanceGridLineSpan ) }) {
-            Text(maintenanceLog.itemChanged, modifier = modifier)
-        }
-        items(count=1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-            Text(maintenanceLog.mileage.toString() + " " + maintenanceLog.unit, modifier = modifier)
-        }
-        items(count=1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-            Text(formatter.format(maintenanceLog.date), modifier = modifier)
-        }
-        items(count=1, span = { GridItemSpan(2) }) {
-            DeleteMaintenanceLogButton(maintenanceLog, maintenanceViewModel)
-        }
-    }
-}
-
-@Preview
-@Composable
-fun MaintenanceLogCardPreview() {
-
-}
-
-@Composable
-fun DeleteMaintenanceLogButton(maintenanceLog: MaintenanceLog, maintenanceViewModel: MaintenanceViewModel) {
-    var showConfirmationForm by remember { mutableStateOf(false) }
-
-    Button(
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.onError,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer
-        ),
-        modifier = Modifier.padding(4.dp),
-        onClick = {
-            showConfirmationForm = true
-        }) {
-        Icon(Icons.Filled.Delete, contentDescription = "Delete")
-    }
-    if (showConfirmationForm) {
-        Dialog(onDismissRequest = { showConfirmationForm = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                DeleteMaintenanceLogConfirmationForm(
-                    maintenanceLog = maintenanceLog,
-                    maintenanceViewModel = maintenanceViewModel,
-                    onDismiss = { showConfirmationForm = false })
-            }
-        }
-
-    }
-}
-
-@Composable
-fun DeleteMaintenanceLogConfirmationForm(
-    maintenanceLog: MaintenanceLog,
+fun NavBar(
     maintenanceViewModel: MaintenanceViewModel,
-    onDismiss: () -> Unit
-) {
-    Column(
-        modifier = Modifier.padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        Text("Are you sure you want to delete this maintenance log?", textAlign = TextAlign.Center)
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        ) {
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
-                onClick = { onDismiss() }) {
-                Text("Cancel")
-            }
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onError,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                ),
-                onClick = {
-                    maintenanceViewModel.deleteMaintenanceLog(maintenanceLog)
-                    onDismiss()
-                }) {
-                Text("Delete")
-            }
+    tripViewModel: TripViewModel,
+    fuelViewModel: FuelViewModel
+){
+    val navController = rememberNavController()
+
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(navController)
         }
-    }
-
-}
-
-
-
-@Preview
-@Composable
-fun PreviewMaintenanceLogCard() {
-//    MaintenanceLogCard(
-//        MaintenanceLog(
-//            itemChanged = "Battery",
-//            date = Date(2023, 1, 1),
-//            mileage = 1633,
-//            unit = "km",
-//            notes = "No notes"
-//        )
-//    )
-}
-
-@Composable
-fun EntryCards(title: String, entryCards: List<String>, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(16.dp)) {
-        TitleEntryCard(title, Modifier.padding())
-        entryCards.forEach { text ->
-            EntryCard(text, Modifier.padding(vertical = 4.dp, horizontal = 12.dp))
-        }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewEntryCards() {
-    CarMaintenanceAppTheme() {
-        Surface {
-            val entryList = listOf("First card", "Second card", "Third card")
-            EntryCards("Title", entryList)
-        }
-    }
-}
-
-@Composable
-fun EntryCard(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodyMedium)
-}
-
-@Composable
-fun TitleEntryCard(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleLarge)
-}
-
-@Preview
-@Composable
-fun PreviewEntryCard() {
-    EntryCard("Testing right here right now")
-}
-
-@Composable
-fun PopUpButton(maintenanceViewModel: MaintenanceViewModel) {
-    var showMenu by remember { mutableStateOf(false) }
-    var showMaintenanceLogForm by remember { mutableStateOf(false) }
-    var showFuelLogForm by remember { mutableStateOf(false) }
-    var showTripLogForm by remember { mutableStateOf(false) }
-
-    Box {
-        FloatingActionButton(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            onClick = {
-                showMenu = true
-            }) {
-            Icon(Icons.Filled.Add, contentDescription = "Add new item")
-        }
-
-        DropdownMenu(
-            expanded = showMenu,
-            onDismissRequest = { showMenu = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Add Maintenance Log") },
-                onClick = {
-                    showMenu = false
-                    showMaintenanceLogForm = true
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Add Fuel Log") },
-                onClick = {
-                    showMenu = false
-                    showFuelLogForm = true
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Add Trip Log") },
-                onClick = {
-                    showMenu = false
-                    showTripLogForm = true
-                }
-            )
-        }
-    }
-    if (showMaintenanceLogForm) {
-        Dialog(onDismissRequest = { showMaintenanceLogForm = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                MaintenanceLogForm(
-                    onDismiss = { showMaintenanceLogForm = false },
-                    maintenanceViewModel = maintenanceViewModel
-                )
-            }
-        }
-    }
-    if (showFuelLogForm) {
-        Dialog(onDismissRequest = { showFuelLogForm = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                FuelLogForm(onDismiss = { showFuelLogForm = false })
-            }
-        }
-    }
-
-    if (showTripLogForm) {
-        Dialog(onDismissRequest = { showTripLogForm = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                TripLogForm(onDismiss = { showTripLogForm = false })
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewPopUpButton() {
-//    PopUpButton(null, null)
-}
-
-@Preview
-@Composable
-fun TripLogFormPreview() {
-    CarMaintenanceAppTheme {
-        TripLogForm(onDismiss = {})
-    }
-}
-
-@Preview
-@Composable
-fun FuelLogFormPreview() {
-    CarMaintenanceAppTheme {
-        FuelLogForm(onDismiss = {})
-    }
-}
-
-@Composable
-fun TripLogForm(onDismiss: () -> Unit) {
-
-    var startLocation by remember { mutableStateOf("") }
-    var endLocation by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var distance by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("km") }
-    var showUnitMenu by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier.padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            "Trip log",
-            modifier = Modifier.padding(bottom = 16.dp),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.titleLarge
-        )
-        TextField(
-            value = startLocation,
-            onValueChange = { startLocation = it },
-            label = { Text("From") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        TextField(
-            value = endLocation,
-            onValueChange = { endLocation = it },
-            label = { Text("To") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        innerPadding ->
+
+        NavHost(
+            navController = navController,
+            startDestination = "home",
+            modifier = Modifier.padding(innerPadding)
         ) {
-            TextField(
-                value = distance,
-                onValueChange = { distance = it },
-                label = { Text("Distance") },
-                modifier = Modifier.weight(1f)
-            )
-
-            Box {
-                Text(
-                    text = unit,
-                    modifier = Modifier
-                        .clickable { showUnitMenu = true }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                DropdownMenu(
-                    expanded = showUnitMenu,
-                    onDismissRequest = { showUnitMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("km") },
-                        onClick = {
-                            unit = "km"
-                            showUnitMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("miles") },
-                        onClick = {
-                            unit = "miles"
-                            showUnitMenu = false
-                        }
-                    )
-                }
+            composable(Screen.Home.route) {
+                HomeScreen(maintenanceViewModel, tripViewModel, fuelViewModel)
             }
-        }
-        TextField(
-            value = date,
-            onValueChange = { date = it },
-            label = { Text("Date") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-        ) {
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
-                onClick = { onDismiss() }) {
-                Text("Cancel")
+            composable(Screen.MaintenanceLogs.route) {
+                MaintenanceLogsScreen(maintenanceViewModel)
             }
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                onClick = {
-                    /*TODO*/
-                    onDismiss()
-                }) {
-                Text("Log")
+            composable(Screen.TripLogs.route) {
+                TripLogsScreen(tripViewModel)
             }
-        }
-    }
-
-}
-
-@Composable
-fun FuelLogForm(onDismiss: () -> Unit) {
-    var stationName by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
-    var isTankFull by remember { mutableStateOf(false) }
-    var mileage by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("liter") }
-    var showUnitMenu by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier.padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            "Fuel Log",
-            modifier = Modifier.padding(bottom = 16.dp),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.titleLarge
-        )
-        TextField(
-            value = date,
-            onValueChange = { date = it },
-            label = { Text("Date") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        TextField(
-            value = stationName,
-            onValueChange = { stationName = it },
-            label = { Text("Station Name") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TextField(
-                value = quantity,
-                onValueChange = { quantity = it },
-                label = { Text("Quantity") },
-                modifier = Modifier.weight(1f)
-            )
-
-            Box {
-                Text(
-                    text = unit,
-                    modifier = Modifier
-                        .clickable { showUnitMenu = true }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                DropdownMenu(
-                    expanded = showUnitMenu,
-                    onDismissRequest = { showUnitMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("liter") },
-                        onClick = {
-                            unit = "liter"
-                            showUnitMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("gallons") },
-                        onClick = {
-                            unit = "gallons"
-                            showUnitMenu = false
-                        }
-                    )
-                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { isTankFull = !isTankFull }
-            ) {
-                RadioButton(
-                    selected = isTankFull,
-                    onClick = { isTankFull = !isTankFull }
-                )
-                Text("Full")
-            }
-        }
-        TextField(
-            value = mileage,
-            onValueChange = { mileage = it },
-            label = { Text("Mileage") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        TextField(
-            value = notes,
-            onValueChange = { notes = it },
-            label = { Text("Notes") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-        ) {
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
-                onClick = { onDismiss() }) {
-                Text("Cancel")
-            }
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                onClick = {
-                    /*TODO*/
-                    onDismiss()
-                }) {
-                Text("Log")
+            composable(Screen.FuelLogs.route) {
+                FuelLogsScreen(fuelViewModel)
             }
         }
     }
 }
 
 @Composable
-fun MaintenanceLogForm(
-    onDismiss: () -> Unit,
-    maintenanceViewModel: MaintenanceViewModel
-) {
-    var notes by remember { mutableStateOf("") }
-    var showUnitMenu by remember { mutableStateOf(false) }
-    var showDateMenu by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
+fun BottomNavBar(navController: NavHostController) {
+    val items = listOf(
+        Screen.Home,
+        Screen.MaintenanceLogs,
+        Screen.TripLogs,
+        Screen.FuelLogs
+    )
 
-    val formState by maintenanceViewModel.formState.collectAsState()
+    NavigationBar {
 
+        val currentRoute =
+            navController.currentBackStackEntryAsState().value?.destination?.route
 
+        items.forEach { screen ->
 
-    Column(
-        modifier = Modifier.padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            "Maintenance Log",
-            modifier = Modifier.padding(bottom = 16.dp),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.titleLarge
-        )
-        TextField(
-            value = formState.itemChanged,
-            onValueChange = { maintenanceViewModel.onItemChanged(it) },
-            isError = formState.itemChangedError != null,
-            label = { Text("Item changed") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-
-        formState.itemChangedError?.let {
-            Text(it, color = Color.Red)
-        }
-
-        TextField(
-            value = formatter.format(formState.date),
-            onValueChange = { },
-            label = { Text("Date") },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { showDateMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Select date"
-                    )
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-                .clickable { showDateMenu = true }
-        )
-
-        if (showDateMenu) {
-            DatePickerDialog(
-                onDismissRequest = { showDateMenu = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showDateMenu = false
-                        maintenanceViewModel.onDateChanged(datePickerState.selectedDateMillis?.let { Date(it) }!!)
-                    }) {
-                        Text("OK")
+            NavigationBarItem(
+                selected = currentRoute == screen.route,
+                onClick = {
+                    navController.navigate(screen.route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
                     }
                 },
-                dismissButton = {
-                    TextButton(onClick = { showDateMenu = false }) {
-                        Text("Cancel")
-                    }
+                icon = {
+                    Icon(
+                        imageVector = screen.icon,
+                        contentDescription = screen.route
+                    )
                 }
-            ) {
-                DatePicker(state = datePickerState)
-            }
-        }
-
-        formState.dateError?.let {
-            Text(it, color = Color.Red)
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TextField(
-                value = formState.mileage.toString(),
-                onValueChange = {
-                    maintenanceViewModel.onMileageChanged(it.toIntOrNull() ?: 0
-                    ) },
-                isError = formState.mileageError != null,
-                label = { Text("Mileage") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
             )
-
-            formState.mileageError?.let {
-                Text(it, color = Color.Red)
-            }
-
-            Box {
-                Text(
-                    text = formState.unit,
-                    modifier = Modifier
-                        .clickable { showUnitMenu = true }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                DropdownMenu(
-                    expanded = showUnitMenu,
-                    onDismissRequest = { showUnitMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("km") },
-                        onClick = {
-                            maintenanceViewModel.onUnitChanged("km")
-                            showUnitMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("miles") },
-                        onClick = {
-                            maintenanceViewModel.onUnitChanged("miles")
-                            showUnitMenu = false
-                        }
-                    )
-                }
-            }
-        }
-
-        formState.unitError?.let {
-            Text(it, color = Color.Red)
-        }
-        TextField(
-            value = notes,
-            onValueChange = { notes = it },
-            label = { Text("Notes") },
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-        ) {
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
-                onClick = {
-                    onDismiss()
-                    maintenanceViewModel.resetFormState()
-                }) {
-                Text("Cancel")
-            }
-            Button(
-                modifier = Modifier.padding(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                onClick = {
-                    if (maintenanceViewModel.validate()) {
-                        maintenanceViewModel.addMaintenanceLog(formState.itemChanged, formState.date, formState.mileage, formState.unit, notes)
-                        onDismiss()
-                        maintenanceViewModel.resetFormState()
-                    }
-                }) {
-                Text("Log")
-            }
         }
     }
-
 }
