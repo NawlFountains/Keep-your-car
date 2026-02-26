@@ -10,7 +10,6 @@ data class MaintenanceLog(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "item_changed") val itemChanged: String,
     @ColumnInfo(name = "date") val date: Date,
-    @ColumnInfo(name = "mileage") val mileage: Int,
-    @ColumnInfo(name = "unit") val unit: String,
+    @ColumnInfo(name = "kilometrage") val kilometrage: Int,
     @ColumnInfo(name = "notes") val notes: String
 )

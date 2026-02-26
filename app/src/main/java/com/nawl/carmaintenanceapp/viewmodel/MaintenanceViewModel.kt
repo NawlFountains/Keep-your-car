@@ -3,9 +3,10 @@ package com.nawl.carmaintenanceapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.nawl.carmaintenanceapp.MaintenanceLogFormState
+import com.nawl.carmaintenanceapp.formstate.MaintenanceLogFormState
 import com.nawl.carmaintenanceapp.model.dao.MaintenanceLogDao
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
+import com.nawl.carmaintenanceapp.view.ConvertToMetricDistanceUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,15 +19,14 @@ class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : V
 
 
     fun getLatestMaintenanceLogs(amount: Int): Flow<List<MaintenanceLog>> {
-        return maintenanceLogDao.getLatestMaintenanceLogs(amount)
+        return maintenanceLogDao.getLatestLogs(amount)
     }
 
-    fun addMaintenanceLog(itemChanged: String, date: Date, mileage: Int, unit: String, notes: String) {
+    fun addMaintenanceLog(itemChanged: String, date: Date, kilometrage: Int, notes: String) {
         val newLog = MaintenanceLog(
             itemChanged = itemChanged,
             date = date,
-            mileage = mileage,
-            unit = unit,
+            kilometrage = ConvertToMetricDistanceUnit(kilometrage),
             notes = notes
         )
         viewModelScope.launch {
@@ -48,12 +48,8 @@ class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : V
         _formState.value = _formState.value.copy(date = date, dateError = null)
     }
 
-    fun onMileageChanged(mileage: Int){
-        _formState.value = _formState.value.copy(mileage = mileage, mileageError = null)
-    }
-
-    fun onUnitChanged(unit: String){
-        _formState.value = _formState.value.copy(unit = unit, unitError = null)
+    fun onKilometrageChanged(kilometrage: Int){
+        _formState.value = _formState.value.copy(kilometrage = kilometrage, kilometrageError = null)
     }
 
     fun resetFormState() {
@@ -67,8 +63,7 @@ class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : V
 
         var itemChangedError: String? = null
         var dateError: String? = null
-        var mileageError: String? = null
-        var unitError: String? = null
+        var kilometrageError: String? = null
 
         if (current.itemChanged.isBlank()) {
             itemChangedError = "Item changed is required"
@@ -80,27 +75,21 @@ class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : V
             dateError = "Date cannot be in the future"
         }
 
-        if (current.mileage.toString().isBlank()) {
-            mileageError = "Mileage is required"
-        } else if (current.mileage < 0) {
-            mileageError = "Mileage cannot be negative"
+        if (current.kilometrage.toString().isBlank()) {
+            kilometrageError = "Kilometrage is required"
+        } else if (current.kilometrage < 0) {
+            kilometrageError = "Kilometrage cannot be negative"
         }
 
-        if (current.unit.isBlank()) {
-            unitError = "Unit is required"
-        } else if (!listOf("km", "miles").contains(current.unit)) {
-            unitError = "Unit must be either 'km' or 'miles'"
-        }
 
 
         _formState.value = current.copy(
             itemChangedError = itemChangedError,
             dateError = dateError,
-            mileageError = mileageError,
-            unitError = unitError
+            kilometrageError = kilometrageError
         )
 
-        return itemChangedError == null && dateError == null && mileageError == null && unitError == null
+        return itemChangedError == null && dateError == null && kilometrageError == null
     }
     private fun isDateInFuture(date: Date): Boolean {
         val currentDate = Date(System.currentTimeMillis())

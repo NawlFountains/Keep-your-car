@@ -5,18 +5,22 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.nawl.carmaintenanceapp.model.entities.FuelLog
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FuelLogDao {
     @Query("SELECT * FROM fuel_logs")
-    fun getAll(): List<FuelLog>
+    fun getAll(): Flow<List<FuelLog>>
+
+    @Query("SELECT * FROM fuel_logs ORDER BY date DESC LIMIT :amount")
+    fun getLatestLogs(amount: Int): Flow<List<FuelLog>>
 
     @Insert
-    fun insert(fuelLog: FuelLog)
+    suspend fun insert(fuelLog: FuelLog)
 
     @Insert
-    fun insertAll(vararg fuelLogs: FuelLog)
+    suspend fun insertAll(vararg fuelLogs: FuelLog)
 
     @Delete
-    fun delete(fuelLog: FuelLog)
+    suspend fun delete(fuelLog: FuelLog)
 }

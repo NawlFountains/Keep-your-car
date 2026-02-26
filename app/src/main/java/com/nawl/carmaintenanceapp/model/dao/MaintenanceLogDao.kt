@@ -14,7 +14,7 @@ interface MaintenanceLogDao {
     fun getAll(): Flow<List<MaintenanceLog>>
 
     @Query("SELECT * FROM maintenance_log ORDER BY date DESC LIMIT :amount")
-    fun getLatestMaintenanceLogs(amount: Int): Flow<List<MaintenanceLog>>
+    fun getLatestLogs(amount: Int): Flow<List<MaintenanceLog>>
 
     @Query("SELECT * FROM maintenance_log WHERE item_changed = :itemChanged and date = :date")
     fun getByItemChangedAndDate(itemChanged: String, date: String): MaintenanceLog?

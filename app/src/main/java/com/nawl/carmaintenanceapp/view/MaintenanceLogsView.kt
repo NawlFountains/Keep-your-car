@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,8 +16,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -34,20 +31,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
+import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
+import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
 
 @Composable
-fun MaintenanceLogsScreen(
-    maintenanceViewModel: MaintenanceViewModel
-) {
+fun MaintenanceLogsScreen() {
+    val context = LocalContext.current
+    val application = context.applicationContext as MainApplication
+    val maintenanceViewModel: MaintenanceViewModel = viewModel(
+        factory = MaintenanceViewModelFactory(application.database.maintenanceLogDao())
+    )
     Column(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
@@ -76,7 +78,9 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
             shape = RoundedCornerShape(16.dp)
         )
     ) {
-        Column() {
+        Column(
+            modifier = modifier
+        ) {
             if (latestMaintenanceLogs.isEmpty()) {
                 Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 return
@@ -91,7 +95,11 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
                         Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                        Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        if (DISTANCE_UNIT == "km")
+                            Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        else
+                            Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+
                     }
                     items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
                         Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -119,7 +127,7 @@ fun MaintenanceLogEditableCard(maintenanceLog: MaintenanceLog, maintenanceViewMo
             Text(maintenanceLog.itemChanged, modifier = modifier)
         }
         items(count=1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-            Text(maintenanceLog.mileage.toString() + " " + maintenanceLog.unit, modifier = modifier)
+            Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier)
         }
         items(count=1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
             Text(formatter.format(maintenanceLog.date), modifier = modifier)

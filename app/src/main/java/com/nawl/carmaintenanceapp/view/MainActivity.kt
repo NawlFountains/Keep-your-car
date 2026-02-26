@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CarRepair
@@ -23,40 +22,60 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
-import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
-import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
-import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
-import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
-import com.nawl.carmaintenanceapp.viewmodel.TripViewModel
-import com.nawl.carmaintenanceapp.viewmodel.TripViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
-    private val maintenanceViewModel: MaintenanceViewModel by viewModels {
-        MaintenanceViewModelFactory((application as MainApplication).database.maintenanceLogDao())
-    }
-    private val tripViewModel: TripViewModel by viewModels {
-        TripViewModelFactory((application as MainApplication).database.tripLogDao())
-    }
-    private val fuelViewModel: FuelViewModel by viewModels {
-        FuelViewModelFactory((application as MainApplication).database.fuelLogDao())
-    }
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         setContent {
             CarMaintenanceAppTheme {
-                NavBar(maintenanceViewModel, tripViewModel, fuelViewModel)
+                NavBar()
             }
         }
     }
 }
+
+//TODO add to settings
+var DISTANCE_UNIT = "km"
+var LIQUID_UNIT = "l"
+var DATE_FORMAT = "dd/MM/yyyy"
+
+fun ConvertToCurrentDistanceUnit(value: Int): Int {
+    var distanceToReturn: Int = value
+    if (DISTANCE_UNIT == "mi") {
+        distanceToReturn = (value * 0.621371).roundToInt()
+    }
+    return distanceToReturn
+}
+
+fun ConvertToCurrentLiquidUnit(value: Float): Float {
+    var liquidToReturn: Float = value
+    if (LIQUID_UNIT == "gal") {
+        liquidToReturn = (value * 0.264172).toFloat()
+    }
+    return liquidToReturn
+}
+fun ConvertToMetricDistanceUnit(value: Int): Int {
+    var distanceToReturn: Int = value
+    if (DISTANCE_UNIT == "mi") {
+        distanceToReturn = (value * 1.609344).roundToInt()
+    }
+    return distanceToReturn
+}
+
+fun ConvertToMetricLiquidUnit(value: Float): Float {
+    var liquidToReturn: Float = value
+    if (LIQUID_UNIT == "gal") {
+        liquidToReturn = (value * 3.785411784).toFloat()
+    }
+    return liquidToReturn
+}
+
 sealed class Screen(
     val route: String,
     val icon: ImageVector
@@ -67,15 +86,11 @@ sealed class Screen(
     object FuelLogs : Screen("fuel logs", Icons.Default.LocalGasStation)
 }
 
-var formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+var formatter = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
 //TODO fix timezone showing a day before
 
 @Composable
-fun NavBar(
-    maintenanceViewModel: MaintenanceViewModel,
-    tripViewModel: TripViewModel,
-    fuelViewModel: FuelViewModel
-){
+fun NavBar(){
     val navController = rememberNavController()
 
     Scaffold(
@@ -91,16 +106,16 @@ fun NavBar(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                HomeScreen(maintenanceViewModel, tripViewModel, fuelViewModel)
+                HomeScreen()
             }
             composable(Screen.MaintenanceLogs.route) {
-                MaintenanceLogsScreen(maintenanceViewModel)
+                MaintenanceLogsScreen()
             }
             composable(Screen.TripLogs.route) {
-                TripLogsScreen(tripViewModel)
+                TripLogsScreen()
             }
             composable(Screen.FuelLogs.route) {
-                FuelLogsScreen(fuelViewModel)
+                FuelLogsScreen()
             }
         }
     }

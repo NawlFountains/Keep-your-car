@@ -12,6 +12,6 @@ data class FuelLog (
     @ColumnInfo(name = "date") val date: Date,
     @ColumnInfo(name = "quantity") val quantity: Float,
     @ColumnInfo(name = "is_tank_full") val isTankFull: Boolean,
-    @ColumnInfo(name = "mileage") val mileage: Int,
+    @ColumnInfo(name = "kilometrage") val kilometrage: Int,
     @ColumnInfo(name = "notes") val notes: String
 )

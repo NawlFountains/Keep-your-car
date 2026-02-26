@@ -11,6 +11,5 @@ data class TripLog (
     @ColumnInfo(name = "origin") val origin: String,
     @ColumnInfo(name = "destination") val destination: String,
     @ColumnInfo(name = "distance") val distance: Int,
-    @ColumnInfo(name = "unit") val unit: String,
     @ColumnInfo(name = "date") val date: Date
 )

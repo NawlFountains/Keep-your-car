@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -43,43 +47,61 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.nawl.carmaintenanceapp.MainApplication
+import com.nawl.carmaintenanceapp.model.entities.FuelLog
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
+import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
+import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
 import com.nawl.carmaintenanceapp.viewmodel.TripViewModel
+import com.nawl.carmaintenanceapp.viewmodel.TripViewModelFactory
 import java.sql.Date
 import kotlin.collections.forEach
 
 @Composable
 fun HomeScreen(
-    maintenanceViewModel: MaintenanceViewModel,
-    tripViewModel: TripViewModel,
-    fuelViewModel: FuelViewModel
 ) {
+    val context = LocalContext.current
+    val application = context.applicationContext as MainApplication
+    val maintenanceViewModel: MaintenanceViewModel = viewModel(
+        factory = MaintenanceViewModelFactory(application.database.maintenanceLogDao())
+    )
+    val tripViewModel: TripViewModel = viewModel(
+        factory = TripViewModelFactory(application.database.tripLogDao())
+    )
+    val fuelViewModel: FuelViewModel = viewModel(
+        factory = FuelViewModelFactory(application.database.fuelLogDao())
+    )
+
+
     Column(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
         CarMaintenanceAppTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                Surface() {
                     Scaffold(
                         floatingActionButton = { MultiOptionPopUpButton(maintenanceViewModel, tripViewModel, fuelViewModel) },
                         floatingActionButtonPosition = FabPosition.End
                     ) { innerPadding ->
                         LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))
+                        LatestFuelLogsCards(5, fuelViewModel, Modifier.padding(innerPadding))
                     }
-
                 }
         }
     }
 }
 
 private var maintenanceGridColumns = 3
+private var fuelGridColumns = 5
 
 @Composable
 fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: MaintenanceViewModel, modifier: Modifier = Modifier) {
@@ -108,7 +130,11 @@ fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: Mainten
                         Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     items(1) {
-                        Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        if (DISTANCE_UNIT == "km")
+                            Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        else
+                            Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+
                     }
                     items(1) {
                         Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -143,7 +169,7 @@ fun LatestMaintenanceLogsCardsPreview() {
                     Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium)
                 }
                 items(1) {
-                    Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium)
+                    Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium)
                 }
                 items(1) {
                     Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium)
@@ -162,22 +188,19 @@ fun dummyLatestMaintenanceLogs(): List<MaintenanceLog> {
         MaintenanceLog(
             itemChanged = "Battery",
             date = Date(2023, 1, 1),
-            mileage = 1633,
-            unit = "km",
+            kilometrage = 1633,
             notes = "No notes"
         ),
         MaintenanceLog(
             itemChanged = "Washer pump",
             date = Date(2023, 1, 1),
-            mileage = 851923,
-            unit = "km",
+            kilometrage = 851923,
             notes = "No notes"
         ),
         MaintenanceLog(
             itemChanged = "Engine",
             date = Date(2023, 1, 1),
-            mileage = 1633,
-            unit = "km",
+            kilometrage = 1633,
             notes = "No notes"
         ))
     return maintenanceLogs
@@ -197,13 +220,14 @@ fun MaintenanceLogCard(maintenanceLog: MaintenanceLog) {
             Text(maintenanceLog.itemChanged, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
         items(count=1) {
-            Text(maintenanceLog.mileage.toString() + " " + maintenanceLog.unit, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
         items(count=1) {
             Text(formatter.format(maintenanceLog.date), modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
     }
 }
+
 
 @Preview
 @Composable
@@ -329,7 +353,10 @@ fun MultiOptionPopUpButton(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                FuelLogForm(onDismiss = { showFuelLogForm = false })
+                FuelLogForm(
+                    onDismiss = { showFuelLogForm = false },
+                    fuelViewModel = fuelViewModel
+                )
             }
         }
     }
@@ -360,13 +387,91 @@ fun TripLogFormPreview() {
     }
 }
 
-@Preview
+
 @Composable
-fun FuelLogFormPreview() {
-    CarMaintenanceAppTheme {
-        FuelLogForm(onDismiss = {})
+fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
+    val latestFuelLogs by fuelViewModel.getLatestFuelLogs(maxLatestLogs).collectAsState(initial = emptyList())
+
+    Box(
+        Modifier.background(
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = RoundedCornerShape(16.dp)
+        )
+    ) {
+        Column(
+            modifier = modifier
+        ) {
+            if (latestFuelLogs.isEmpty()) {
+                Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                return
+            } else {
+                Text("Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(count = fuelGridColumns),
+                    Modifier.padding(8.dp)
+                ){
+                    val modifier = Modifier.padding(8.dp)
+                    items(1) {
+                        Text("Station name", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                    items(1) {
+                        if (LIQUID_UNIT == "l")
+                            Text("Litres", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        else
+                            Text("Gallons", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                    items(1) {
+                        Text("Full", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                    items(1) {
+                        if (DISTANCE_UNIT == "km")
+                            Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        else
+                            Text("Miles", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                    items(1) {
+                        Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                }
+            }
+            latestFuelLogs.forEach { fuelLog ->
+                FuelLogCard(fuelLog, fuelViewModel)
+            }
+        }
     }
 }
+
+@Composable
+fun FuelLogCard(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
+    val modifier = Modifier.padding(8.dp)
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(count = fuelGridColumns),
+        verticalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(8.dp)
+    ) {
+        items(1) {
+            Text(fuelLog.stationName, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        }
+        items(1) {
+            Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        }
+        items(1) {
+            if (fuelLog.isTankFull)
+                Icon(Icons.Outlined.Check, contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+            else
+                Icon(Icons.Outlined.Cancel, contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        }
+        items(1) {
+            Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        }
+        items(1) {
+            Text(formatter.format(fuelLog.date), modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        }
+    }
+}
+
 
 @Composable
 fun TripLogForm(onDismiss: () -> Unit) {
@@ -375,8 +480,6 @@ fun TripLogForm(onDismiss: () -> Unit) {
     var endLocation by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var distance by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("km") }
-    var showUnitMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -417,33 +520,11 @@ fun TripLogForm(onDismiss: () -> Unit) {
                 label = { Text("Distance") },
                 modifier = Modifier.weight(1f)
             )
-
-            Box {
-                Text(
-                    text = unit,
-                    modifier = Modifier
-                        .clickable { showUnitMenu = true }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                DropdownMenu(
-                    expanded = showUnitMenu,
-                    onDismissRequest = { showUnitMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("km") },
-                        onClick = {
-                            unit = "km"
-                            showUnitMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("miles") },
-                        onClick = {
-                            unit = "miles"
-                            showUnitMenu = false
-                        }
-                    )
-                }
+            Text(
+                text = DISTANCE_UNIT ,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
             }
         }
         TextField(
@@ -485,18 +566,20 @@ fun TripLogForm(onDismiss: () -> Unit) {
         }
     }
 
-}
 
 @Composable
-fun FuelLogForm(onDismiss: () -> Unit) {
-    var stationName by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
+fun FuelLogForm(
+    onDismiss: () -> Unit,
+    fuelViewModel: FuelViewModel
+) {
+    val formState by fuelViewModel.formState.collectAsState()
+
+
     var isTankFull by remember { mutableStateOf(false) }
-    var mileage by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("liter") }
-    var showUnitMenu by remember { mutableStateOf(false) }
+    var showDateMenu by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -509,21 +592,62 @@ fun FuelLogForm(onDismiss: () -> Unit) {
             style = MaterialTheme.typography.titleLarge
         )
         TextField(
-            value = date,
-            onValueChange = { date = it },
+            value = formatter.format(formState.date),
+            onValueChange = { },
             label = { Text("Date") },
+            readOnly = true,
+            isError = formState.dateError != null,
+            trailingIcon = {
+                IconButton(onClick = { showDateMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Select date"
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
+                .clickable { showDateMenu = true }
         )
+
+        if (showDateMenu) {
+            DatePickerDialog(
+                onDismissRequest = { showDateMenu = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDateMenu = false
+                        fuelViewModel.onDateChanged(datePickerState.selectedDateMillis?.let { Date(it) }!!)
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDateMenu = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+        formState.dateError?.let {
+            Text(it, color = Color.Red)
+        }
         TextField(
-            value = stationName,
-            onValueChange = { stationName = it },
+            value = formState.stationName,
+            onValueChange = { fuelViewModel.onStationNameChanged(it) },
             label = { Text("Station Name") },
+            isError = formState.stationNameError != null,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
         )
+
+        formState.stationNameError?.let {
+            Text(it, color = Color.Red)
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -532,39 +656,20 @@ fun FuelLogForm(onDismiss: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextField(
-                value = quantity,
-                onValueChange = { quantity = it },
+                value = String.format("%.2f", ConvertToCurrentLiquidUnit(formState.quantity)),
+                onValueChange = { fuelViewModel.onQuantityChanged(it.toFloat()) },
                 label = { Text("Quantity") },
                 modifier = Modifier.weight(1f)
             )
-
-            Box {
-                Text(
-                    text = unit,
-                    modifier = Modifier
-                        .clickable { showUnitMenu = true }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                DropdownMenu(
-                    expanded = showUnitMenu,
-                    onDismissRequest = { showUnitMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("liter") },
-                        onClick = {
-                            unit = "liter"
-                            showUnitMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("gallons") },
-                        onClick = {
-                            unit = "gallons"
-                            showUnitMenu = false
-                        }
-                    )
-                }
+            formState.quantityError?.let {
+                Text(it, color = Color.Red)
             }
+
+            Text(
+                text = LIQUID_UNIT,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -577,14 +682,33 @@ fun FuelLogForm(onDismiss: () -> Unit) {
                 Text("Full")
             }
         }
-        TextField(
-            value = mileage,
-            onValueChange = { mileage = it },
-            label = { Text("Mileage") },
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = ConvertToCurrentDistanceUnit(formState.kilometrage).toString(),
+                onValueChange = {
+                    fuelViewModel.onKilometrageChanged(it.toIntOrNull() ?: 0)
+                     },
+                label = {
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage")
+                    else
+                        Text("Mileage")
+                        },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = DISTANCE_UNIT,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
         TextField(
             value = notes,
             onValueChange = { notes = it },
@@ -606,7 +730,10 @@ fun FuelLogForm(onDismiss: () -> Unit) {
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                onClick = { onDismiss() }) {
+                onClick = {
+                    onDismiss()
+                    fuelViewModel.resetFormState()
+                }) {
                 Text("Cancel")
             }
             Button(
@@ -617,7 +744,11 @@ fun FuelLogForm(onDismiss: () -> Unit) {
                 ),
                 onClick = {
                     /*TODO*/
-                    onDismiss()
+                    if (fuelViewModel.validate()) {
+                        fuelViewModel.addFuelLog(formState.stationName, formState.quantity, isTankFull, formState.date, formState.kilometrage, notes)
+                        onDismiss()
+                        fuelViewModel.resetFormState()
+                    }
                 }) {
                 Text("Log")
             }
@@ -631,7 +762,6 @@ fun MaintenanceLogForm(
     maintenanceViewModel: MaintenanceViewModel
 ) {
     var notes by remember { mutableStateOf("") }
-    var showUnitMenu by remember { mutableStateOf(false) }
     var showDateMenu by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
@@ -714,51 +844,32 @@ fun MaintenanceLogForm(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextField(
-                value = formState.mileage.toString(),
+                value = formState.kilometrage.toString(),
                 onValueChange = {
-                    maintenanceViewModel.onMileageChanged(it.toIntOrNull() ?: 0
+                    maintenanceViewModel.onKilometrageChanged(it.toIntOrNull() ?: 0
                     ) },
-                isError = formState.mileageError != null,
-                label = { Text("Mileage") },
+                isError = formState.kilometrageError != null,
+                label = {
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage")
+                    else
+                        Text("Mileage")
+                        },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
 
-            formState.mileageError?.let {
+            formState.kilometrageError?.let {
                 Text(it, color = Color.Red)
             }
 
             Box {
                 Text(
-                    text = formState.unit,
+                    text = DISTANCE_UNIT,
                     modifier = Modifier
-                        .clickable { showUnitMenu = true }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
-                DropdownMenu(
-                    expanded = showUnitMenu,
-                    onDismissRequest = { showUnitMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("km") },
-                        onClick = {
-                            maintenanceViewModel.onUnitChanged("km")
-                            showUnitMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("miles") },
-                        onClick = {
-                            maintenanceViewModel.onUnitChanged("miles")
-                            showUnitMenu = false
-                        }
-                    )
-                }
             }
-        }
-
-        formState.unitError?.let {
-            Text(it, color = Color.Red)
         }
         TextField(
             value = notes,
@@ -794,7 +905,7 @@ fun MaintenanceLogForm(
                 ),
                 onClick = {
                     if (maintenanceViewModel.validate()) {
-                        maintenanceViewModel.addMaintenanceLog(formState.itemChanged, formState.date, formState.mileage, formState.unit, notes)
+                        maintenanceViewModel.addMaintenanceLog(formState.itemChanged, formState.date, formState.kilometrage,  notes)
                         onDismiss()
                         maintenanceViewModel.resetFormState()
                     }
