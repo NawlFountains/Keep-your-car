@@ -1,5 +1,6 @@
 package com.nawl.carmaintenanceapp.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -30,6 +31,21 @@ class TripViewModel ( private val tripLogDao: TripLogDao) : ViewModel() {
         viewModelScope.launch {
             tripLogDao.insert(newLog)
         }
+    }
+
+    fun editTripLog(id: Int, origin: String, destination: String, date: Date, distance: Int) {
+
+        val tripLog = TripLog(
+            id = id,
+            origin = origin,
+            destination = destination,
+            date = date,
+            distance = distance
+        )
+        viewModelScope.launch {
+            tripLogDao.update(tripLog)
+        }
+
     }
 
     fun deleteTripLog(tripLog: TripLog) {

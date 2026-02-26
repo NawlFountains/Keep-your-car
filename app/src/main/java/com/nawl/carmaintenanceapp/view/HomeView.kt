@@ -95,8 +95,8 @@ fun HomeScreen(
                             modifier = Modifier
                                 .padding(innerPadding)
                                 .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
 
                         ) {
                             LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))

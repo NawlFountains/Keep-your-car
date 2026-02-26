@@ -37,6 +37,20 @@ class FuelViewModel(private val fuelLogDao: FuelLogDao) : ViewModel() {
         }
 
     }
+    fun editFuelLog(id: Int, stationName: String, quantity: Float, isTankFull: Boolean, date: Date, kilometrage: Int, notes: String) {
+        val fuelLog = FuelLog(
+            id = id,
+            stationName = stationName,
+            quantity = ConvertToMetricLiquidUnit(quantity),
+            isTankFull = isTankFull,
+            date = date,
+            kilometrage = ConvertToMetricDistanceUnit(kilometrage),
+            notes = notes
+        )
+        viewModelScope.launch {
+            fuelLogDao.update(fuelLog)
+        }
+    }
     fun deleteFuelLog(fuelLog: FuelLog) {
         viewModelScope.launch {
             fuelLogDao.delete(fuelLog)

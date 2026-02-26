@@ -1,4 +1,4 @@
-package com.nawl.carmaintenanceapp.model
+package com.nawl.carmaintenanceapp.model.database
 
 import android.content.Context
 import androidx.room.Database
@@ -8,7 +8,6 @@ import androidx.room.TypeConverters
 import com.nawl.carmaintenanceapp.model.dao.FuelLogDao
 import com.nawl.carmaintenanceapp.model.dao.MaintenanceLogDao
 import com.nawl.carmaintenanceapp.model.dao.TripLogDao
-import com.nawl.carmaintenanceapp.model.database.Converters
 import com.nawl.carmaintenanceapp.model.entities.FuelLog
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.model.entities.TripLog

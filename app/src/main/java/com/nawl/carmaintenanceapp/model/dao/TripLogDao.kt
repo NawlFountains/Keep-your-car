@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.nawl.carmaintenanceapp.model.entities.TripLog
 import kotlinx.coroutines.flow.Flow
 
@@ -17,6 +18,10 @@ interface TripLogDao {
 
     @Insert
     suspend fun insert(tripLog: TripLog)
+
+    @Update
+    suspend fun update(tripLog: TripLog)
+
 
     @Insert
     suspend fun insertAll(vararg tripLogs: TripLog)

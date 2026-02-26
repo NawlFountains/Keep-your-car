@@ -33,6 +33,18 @@ class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : V
             maintenanceLogDao.insert(newLog)
         }
     }
+    fun editMaintenanceLog(id: Int, itemChanged: String, date: Date, kilometrage: Int, notes: String) {
+        val maintenanceLog = MaintenanceLog(
+            id = id,
+            itemChanged = itemChanged,
+            date = date,
+            kilometrage = ConvertToMetricDistanceUnit(kilometrage),
+            notes = notes
+        )
+        viewModelScope.launch {
+            maintenanceLogDao.update(maintenanceLog)
+        }
+    }
     fun deleteMaintenanceLog(maintenanceLog: MaintenanceLog) {
         viewModelScope.launch {
             maintenanceLogDao.delete(maintenanceLog)
