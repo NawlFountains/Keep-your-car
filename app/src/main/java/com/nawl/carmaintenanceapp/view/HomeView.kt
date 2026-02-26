@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -73,6 +69,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as MainApplication
+
     val maintenanceViewModel: MaintenanceViewModel = viewModel(
         factory = MaintenanceViewModelFactory(application.database.maintenanceLogDao())
     )
@@ -110,9 +107,6 @@ fun HomeScreen(
     }
 }
 
-private var maintenanceGridColumns = 3
-private var fuelGridColumns = 5
-
 @Composable
 fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: MaintenanceViewModel, modifier: Modifier = Modifier) {
     val latestMaintenanceLogs by maintenanceViewModel.getLatestMaintenanceLogs(maxLatestLogs).collectAsState(initial = emptyList())
@@ -132,7 +126,8 @@ fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: Mainten
             } else {
                 Text("Latest maintenance logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Row(
-                    Modifier.padding(8.dp)
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(8.dp)
                 ){
                     val modifier = Modifier.padding(8.dp)
                     Text("Item", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -146,44 +141,8 @@ fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: Mainten
                 }
             }
             latestMaintenanceLogs.forEach { maintenanceLog ->
-                Row() {
-                    MaintenanceLogCard(maintenanceLog)
-                }
+                MaintenanceLogCard(maintenanceLog)
             }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun LatestMaintenanceLogsCardsPreview() {
-    val latestMaintenanceLogs = dummyLatestMaintenanceLogs()
-
-    Column(modifier = Modifier.padding(2.dp)) {
-        if (latestMaintenanceLogs.isEmpty()) {
-            Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
-            return
-        } else {
-            Text("Latest maintenance logs:", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(count = maintenanceGridColumns),
-                Modifier.padding(8.dp)
-            ){
-                val modifier = Modifier.padding(8.dp)
-                items(1) {
-                    Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                }
-                items(1) {
-                    Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                }
-                items(1) {
-                    Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium)
-                }
-
-            }
-        }
-        latestMaintenanceLogs.forEach { maintenanceLog ->
-//            MaintenanceLogCard(maintenanceLog, null)
         }
     }
 }
@@ -216,10 +175,12 @@ fun MaintenanceLogCard(maintenanceLog: MaintenanceLog) {
     val modifier = Modifier.padding(8.dp)
 
     Row(
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(8.dp)
     ) {
         Text(maintenanceLog.itemChanged, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatter.format(maintenanceLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatToUTC(maintenanceLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
 }
 
@@ -394,7 +355,8 @@ fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifi
         ).fillMaxWidth()
     ) {
         Column(
-            modifier = modifier
+            modifier = modifier,
+
         ) {
             if (latestFuelLogs.isEmpty()) {
                 Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -437,7 +399,7 @@ fun FuelLogCard(fuelLog: FuelLog) {
         Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatter.format(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatToUTC(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         if (fuelLog.isTankFull)
             Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
         else
@@ -565,7 +527,7 @@ fun FuelLogForm(
             style = MaterialTheme.typography.titleLarge
         )
         TextField(
-            value = formatter.format(formState.date),
+            value = formatToUTC(formState.date),
             onValueChange = { },
             label = { Text("Date") },
             readOnly = true,
@@ -631,6 +593,7 @@ fun FuelLogForm(
             TextField(
                 value = String.format("%.2f", ConvertToCurrentLiquidUnit(formState.quantity)),
                 onValueChange = { fuelViewModel.onQuantityChanged(it.toFloat()) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 label = { Text("Quantity") },
                 modifier = Modifier.weight(1f)
             )
@@ -767,7 +730,7 @@ fun MaintenanceLogForm(
         }
 
         TextField(
-            value = formatter.format(formState.date),
+            value = formatToUTC(formState.date),
             onValueChange = { },
             label = { Text("Date") },
             readOnly = true,

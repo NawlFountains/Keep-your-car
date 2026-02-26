@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -43,11 +41,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.model.entities.FuelLog
-import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
-import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
 
 @Composable
 fun FuelLogsScreen() {
@@ -71,7 +67,6 @@ fun FuelLogsScreen() {
         }
     }
 }
-private var fuelGridColumns = 5
 
 @Composable
 fun FuelLogsList(fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
@@ -128,7 +123,7 @@ fun FuelLogEditableCard(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
         Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatter.format(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatToUTC(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         if (fuelLog.isTankFull)
             Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
         else

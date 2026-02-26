@@ -9,10 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -91,7 +87,8 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
             } else {
                 Text("Latest maintenance logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Row(
-                    Modifier.padding(8.dp)
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(8.dp)
                 ){
                     val modifier = Modifier.padding(8.dp)
                     Text("Item", modifier = modifier.weight(3f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -117,10 +114,13 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
 fun MaintenanceLogEditableCard(maintenanceLog: MaintenanceLog, maintenanceViewModel: MaintenanceViewModel) {
     val modifier = Modifier.padding(8.dp)
 
-    Row() {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(8.dp)
+    ) {
         Text(maintenanceLog.itemChanged, modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatter.format(maintenanceLog.date), modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatToUTC(maintenanceLog.date), modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Column( modifier =Modifier.weight(1f)) {
             DeleteMaintenanceLogButton(maintenanceLog, maintenanceViewModel)
         }

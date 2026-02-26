@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
+import java.sql.Date
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -44,6 +45,8 @@ class MainActivity : ComponentActivity() {
 var DISTANCE_UNIT = "km"
 var LIQUID_UNIT = "l"
 var DATE_FORMAT = "dd/MM/yyyy"
+var localDateFormatter = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
+
 
 fun ConvertToCurrentDistanceUnit(value: Int): Int {
     var distanceToReturn: Int = value
@@ -76,6 +79,12 @@ fun ConvertToMetricLiquidUnit(value: Float): Float {
     return liquidToReturn
 }
 
+fun formatToUTC(date: Date): String {
+    localDateFormatter.timeZone = java.util.TimeZone.getTimeZone("UTC")
+    return localDateFormatter.format(date)
+}
+
+
 sealed class Screen(
     val route: String,
     val icon: ImageVector
@@ -86,7 +95,6 @@ sealed class Screen(
     object FuelLogs : Screen("fuel logs", Icons.Default.LocalGasStation)
 }
 
-var formatter = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
 //TODO fix timezone showing a day before
 
 @Composable
