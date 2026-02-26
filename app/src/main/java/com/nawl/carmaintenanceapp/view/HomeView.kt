@@ -54,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.model.entities.FuelLog
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
+import com.nawl.carmaintenanceapp.model.entities.TripLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
@@ -100,6 +101,7 @@ fun HomeScreen(
                         ) {
                             LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))
                             LatestFuelLogsCards(5, fuelViewModel, Modifier.padding(innerPadding))
+                            LatestTripLogsCards(5, tripViewModel, Modifier.padding(innerPadding))
                         }
                     }
                 }
@@ -184,62 +186,60 @@ fun MaintenanceLogCard(maintenanceLog: MaintenanceLog) {
         }
 }
 
-
-@Preview
 @Composable
-fun MaintenanceLogCardPreview() {
+fun LatestTripLogsCards(maxLatestLogs: Int, tripViewModel: TripViewModel, modifier: Modifier = Modifier) {
+    val latestTripLogs by tripViewModel.getLatestTripLogs(maxLatestLogs).collectAsState(initial = emptyList())
 
-}
+    Box(
+        Modifier.background(
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = RoundedCornerShape(16.dp)
+        ).fillMaxWidth()
+    ) {
+        Column(
+            modifier = modifier
+        ) {
+            if (latestTripLogs.isEmpty()) {
+                Text("Start adding trip logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                return
+            } else {
+                Text("Latest trip logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(8.dp)
+                ){
+                    val modifier = Modifier.padding(8.dp)
+                    Text("Origin", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Destination", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Mileage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
 
-@Preview
-@Composable
-fun PreviewMaintenanceLogCard() {
-//    MaintenanceLogCard(
-//        MaintenanceLog(
-//            itemChanged = "Battery",
-//            date = Date(2023, 1, 1),
-//            mileage = 1633,
-//            unit = "km",
-//            notes = "No notes"
-//        )
-//    )
-}
+                    Text("Date", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
 
-@Composable
-fun EntryCards(title: String, entryCards: List<String>, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(16.dp)) {
-        TitleEntryCard(title, Modifier.padding())
-        entryCards.forEach { text ->
-            EntryCard(text, Modifier.padding(vertical = 4.dp, horizontal = 12.dp))
+                }
+            }
+            latestTripLogs.forEach { tripLog ->
+                TripLogCard(tripLog)
+            }
         }
     }
 }
 
-@Preview
 @Composable
-fun PreviewEntryCards() {
-    CarMaintenanceAppTheme() {
-        Surface {
-            val entryList = listOf("First card", "Second card", "Third card")
-            EntryCards("Title", entryList)
-        }
+fun TripLogCard(tripLog: TripLog) {
+    val modifier = Modifier.padding(8.dp)
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(8.dp)
+    ) {
+        Text(tripLog.origin, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(tripLog.destination, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(ConvertToCurrentDistanceUnit(tripLog.distance).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatToUTC(tripLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
     }
-}
-
-@Composable
-fun EntryCard(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodyMedium)
-}
-
-@Composable
-fun TitleEntryCard(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleLarge)
-}
-
-@Preview
-@Composable
-fun PreviewEntryCard() {
-    EntryCard("Testing right here right now")
 }
 
 @Composable
@@ -323,27 +323,12 @@ fun MultiOptionPopUpButton(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                TripLogForm(onDismiss = { showTripLogForm = false })
+                TripLogForm(onDismiss = { showTripLogForm = false },
+                    tripViewModel = tripViewModel)
             }
         }
     }
 }
-
-@Preview
-@Composable
-fun PreviewPopUpButton() {
-//    PopUpButton(null, null)
-}
-
-@Preview
-@Composable
-fun TripLogFormPreview() {
-    CarMaintenanceAppTheme {
-        TripLogForm(onDismiss = {})
-    }
-}
-
-
 @Composable
 fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
     val latestFuelLogs by fuelViewModel.getLatestFuelLogs(maxLatestLogs).collectAsState(initial = emptyList())
@@ -409,12 +394,15 @@ fun FuelLogCard(fuelLog: FuelLog) {
 
 
 @Composable
-fun TripLogForm(onDismiss: () -> Unit) {
+fun TripLogForm (
+    onDismiss: () -> Unit ,
+    tripViewModel: TripViewModel
+) {
+    val formState by tripViewModel.formState.collectAsState()
 
-    var startLocation by remember { mutableStateOf("") }
-    var endLocation by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var distance by remember { mutableStateOf("") }
+    var showDateMenu by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -427,21 +415,29 @@ fun TripLogForm(onDismiss: () -> Unit) {
             style = MaterialTheme.typography.titleLarge
         )
         TextField(
-            value = startLocation,
-            onValueChange = { startLocation = it },
+            value = formState.origin,
+            onValueChange = { tripViewModel.onOriginChanged(it) },
+            isError = formState.originError != null,
             label = { Text("From") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
         )
+        formState.originError?.let {
+            Text(it, color = Color.Red)
+        }
         TextField(
-            value = endLocation,
-            onValueChange = { endLocation = it },
+            value = formState.destination,
+            onValueChange = { tripViewModel.onDestinationChanged(it)},
+            isError = formState.destinationError != null,
             label = { Text("To") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
         )
+        formState.destinationError?.let {
+            Text(it, color = Color.Red)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -450,8 +446,10 @@ fun TripLogForm(onDismiss: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextField(
-                value = distance,
-                onValueChange = { distance = it },
+                value = formState.distance.toString(),
+                onValueChange = { tripViewModel.onDistanceChanged(it.toIntOrNull() ?: 0) },
+                isError = formState.distanceError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 label = { Text("Distance") },
                 modifier = Modifier.weight(1f)
             )
@@ -460,16 +458,53 @@ fun TripLogForm(onDismiss: () -> Unit) {
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            }
+        }
+        formState.distanceError?.let {
+            Text(it, color = Color.Red)
         }
         TextField(
-            value = date,
-            onValueChange = { date = it },
+            value = formatToUTC(formState.date),
+            onValueChange = { },
             label = { Text("Date") },
+            readOnly = true,
+            isError = formState.dateError != null,
+            trailingIcon = {
+                IconButton(onClick = { showDateMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Select date"
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
+                .clickable { showDateMenu = true }
         )
+
+        if (showDateMenu) {
+            DatePickerDialog(
+                onDismissRequest = { showDateMenu = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDateMenu = false
+                        tripViewModel.onDateChanged(datePickerState.selectedDateMillis?.let { Date(it) }!!)
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDateMenu = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+        formState.dateError?.let {
+            Text(it, color = Color.Red)
+        }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -483,7 +518,10 @@ fun TripLogForm(onDismiss: () -> Unit) {
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                onClick = { onDismiss() }) {
+                onClick = {
+                    onDismiss()
+                    tripViewModel.resetFormState()
+                }) {
                 Text("Cancel")
             }
             Button(
@@ -494,12 +532,17 @@ fun TripLogForm(onDismiss: () -> Unit) {
                 ),
                 onClick = {
                     /*TODO*/
-                    onDismiss()
+                    if (tripViewModel.validate()) {
+                        tripViewModel.addTripLog(formState.origin, formState.destination, formState.date, formState.distance)
+                        tripViewModel.resetFormState()
+                        onDismiss()
+                    }
                 }) {
                 Text("Log")
             }
         }
     }
+}
 
 
 @Composable
@@ -679,7 +722,6 @@ fun FuelLogForm(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 onClick = {
-                    /*TODO*/
                     if (fuelViewModel.validate()) {
                         fuelViewModel.addFuelLog(formState.stationName, formState.quantity, isTankFull, formState.date, formState.kilometrage, notes)
                         onDismiss()
