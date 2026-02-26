@@ -4,14 +4,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -25,17 +32,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.model.entities.FuelLog
+import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
+import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
 
 @Composable
 fun FuelLogsScreen() {
@@ -54,41 +66,150 @@ fun FuelLogsScreen() {
                 floatingActionButtonPosition = FabPosition.End
             ) { innerPadding ->
                 Text("Fuel Logs", modifier = Modifier.padding(innerPadding))
-                LatestFuelLogsCards(4,fuelViewModel, Modifier.padding(innerPadding))
+                FuelLogsList(fuelViewModel, Modifier.padding(innerPadding))
             }
         }
     }
 }
 private var fuelGridColumns = 5
 
+@Composable
+fun FuelLogsList(fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
+    val latestFuelLogs by fuelViewModel.getLatestFuelLogs(4).collectAsState(initial = emptyList())
+
+    Box(
+        Modifier.background(
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = RoundedCornerShape(16.dp)
+        ).fillMaxWidth()
+    ) {
+        Column(
+            modifier = modifier
+        ) {
+            if (latestFuelLogs.isEmpty()) {
+                Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                return
+            } else {
+                Text("Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(8.dp)
+                ){
+                    val modifier = Modifier.padding(8.dp)
+                    Text("Station name", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (LIQUID_UNIT == "l")
+                        Text("Litres", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Gallons", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Miles", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Date", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Full", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+            latestFuelLogs.forEach { fuelLog ->
+                FuelLogEditableCard(fuelLog, fuelViewModel)
+            }
+        }
+    }
+}
 
 @Composable
 fun FuelLogEditableCard(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
     val modifier = Modifier.padding(8.dp)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(count = fuelGridColumns),
-        verticalArrangement = Arrangement.Center,
+    Row(
         horizontalArrangement = Arrangement.Center,
         modifier = Modifier.padding(8.dp)
     ) {
-        items(1) {
-            Text(fuelLog.stationName, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatter.format(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        if (fuelLog.isTankFull)
+            Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        else
+            Icon(Icons.Outlined.Cancel, modifier = modifier.weight(1f), contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        Column( modifier =Modifier.weight(1f)) {
+            DeleteFuelLogButton(fuelLog, fuelViewModel)
         }
-        items(1) {
-            Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+    }
+}
+
+@Composable
+fun DeleteFuelLogButton(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
+    var showConfirmationForm by remember { mutableStateOf(false) }
+
+    Button(
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer
+        ),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier.fillMaxWidth().height(36.dp),
+        onClick = {
+            showConfirmationForm = true
+        }) {
+        Icon(Icons.Filled.Delete, contentDescription = "Delete", modifier = Modifier.fillMaxWidth())
+    }
+    if (showConfirmationForm) {
+        Dialog(onDismissRequest = { showConfirmationForm = false }) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                DeleteFuelLogConfirmationForm(
+                    fuelLog = fuelLog,
+                    fuelViewModel = fuelViewModel,
+                    onDismiss = { showConfirmationForm = false })
+            }
         }
-        items(1) {
-            if (fuelLog.isTankFull)
-                Icon(Icons.Outlined.Check, contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
-            else
-                Icon(Icons.Outlined.Cancel, contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(1) {
-            Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(1) {
-            Text(formatter.format(fuelLog.date), modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+
+    }
+}
+
+@Composable
+fun DeleteFuelLogConfirmationForm(
+    fuelLog: FuelLog,
+    fuelViewModel: FuelViewModel,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        Text("Are you sure you want to delete this fuel log?", textAlign = TextAlign.Center)
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            Button(
+                modifier = Modifier.padding(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                onClick = { onDismiss() }) {
+                Text("Cancel")
+            }
+            Button(
+                modifier = Modifier.padding(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onError,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ),
+                onClick = {
+                    fuelViewModel.deleteFuelLog(fuelLog)
+                    onDismiss()
+                }) {
+                Text("Delete")
+            }
         }
     }
 }

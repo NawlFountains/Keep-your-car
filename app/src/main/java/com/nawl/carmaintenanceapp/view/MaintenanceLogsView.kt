@@ -4,9 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -31,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -76,7 +80,7 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
         Modifier.background(
             color = MaterialTheme.colorScheme.secondaryContainer,
             shape = RoundedCornerShape(16.dp)
-        )
+        ).fillMaxWidth()
     ) {
         Column(
             modifier = modifier
@@ -85,29 +89,25 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
                 Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 return
             } else {
-                Text("Maintenance logs:", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(count = maintenanceGridColumns),
+                Text("Latest maintenance logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Row(
                     Modifier.padding(8.dp)
                 ){
                     val modifier = Modifier.padding(8.dp)
-                    items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                        Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
-                    items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                        if (DISTANCE_UNIT == "km")
-                            Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        else
-                            Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Item", modifier = modifier.weight(3f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage", modifier = modifier.weight(3f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Mileage", modifier = modifier.weight(3f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
 
-                    }
-                    items(1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-                        Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
+                    Text("Date", modifier = modifier.weight(3f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
             latestMaintenanceLogs.forEach { maintenanceLog ->
-                MaintenanceLogEditableCard(maintenanceLog, maintenanceViewModel)
+                Row() {
+                    MaintenanceLogEditableCard(maintenanceLog, maintenanceViewModel)
+                }
             }
         }
     }
@@ -117,22 +117,11 @@ fun MaintenanceLogsList(maintenanceViewModel: MaintenanceViewModel, modifier: Mo
 fun MaintenanceLogEditableCard(maintenanceLog: MaintenanceLog, maintenanceViewModel: MaintenanceViewModel) {
     val modifier = Modifier.padding(8.dp)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(count = maintenanceGridColumns),
-        verticalArrangement = Arrangement.Center,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        items(1, span = { GridItemSpan(maintenanceGridLineSpan ) }) {
-            Text(maintenanceLog.itemChanged, modifier = modifier)
-        }
-        items(count=1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-            Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier)
-        }
-        items(count=1, span = { GridItemSpan(maintenanceGridLineSpan) }) {
-            Text(formatter.format(maintenanceLog.date), modifier = modifier)
-        }
-        items(count=1, span = { GridItemSpan(2) }) {
+    Row() {
+        Text(maintenanceLog.itemChanged, modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatter.format(maintenanceLog.date), modifier = modifier.weight(3f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Column( modifier =Modifier.weight(1f)) {
             DeleteMaintenanceLogButton(maintenanceLog, maintenanceViewModel)
         }
     }
@@ -144,14 +133,15 @@ fun DeleteMaintenanceLogButton(maintenanceLog: MaintenanceLog, maintenanceViewMo
 
     Button(
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.onError,
+            containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onErrorContainer
         ),
-        modifier = Modifier.padding(4.dp),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier.fillMaxWidth().height(36.dp),
         onClick = {
             showConfirmationForm = true
         }) {
-        Icon(Icons.Filled.Delete, contentDescription = "Delete")
+        Icon(Icons.Filled.Delete, contentDescription = "Delete", modifier = Modifier.fillMaxWidth())
     }
     if (showConfirmationForm) {
         Dialog(onDismissRequest = { showConfirmationForm = false }) {

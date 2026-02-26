@@ -5,18 +5,22 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.nawl.carmaintenanceapp.model.entities.TripLog
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TripLogDao {
     @Query("SELECT * FROM trip_logs")
-    fun getAll(): List<TripLog>
+    fun getAll(): Flow<List<TripLog>>
+
+    @Query("SELECT * FROM trip_logs ORDER BY date DESC LIMIT :amount")
+    fun getLatestLogs(amount: Int): Flow<List<TripLog>>
 
     @Insert
-    fun insert(tripLog: TripLog)
+    suspend fun insert(tripLog: TripLog)
 
     @Insert
-    fun insertAll(vararg tripLogs: TripLog)
+    suspend fun insertAll(vararg tripLogs: TripLog)
 
     @Delete
-    fun delete(tripLog: TripLog)
+    suspend fun delete(tripLog: TripLog)
 }

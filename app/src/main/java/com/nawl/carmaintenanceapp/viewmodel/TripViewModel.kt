@@ -6,6 +6,7 @@ import com.nawl.carmaintenanceapp.model.dao.TripLogDao
 
 class TripViewModel ( private val tripLogDao: TripLogDao) : ViewModel() {
 
+
 }
 
 class TripViewModelFactory(private val tripLogDao: TripLogDao) : ViewModelProvider.Factory {

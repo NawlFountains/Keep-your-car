@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
@@ -92,8 +93,17 @@ fun HomeScreen(
                         floatingActionButton = { MultiOptionPopUpButton(maintenanceViewModel, tripViewModel, fuelViewModel) },
                         floatingActionButtonPosition = FabPosition.End
                     ) { innerPadding ->
-                        LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))
-                        LatestFuelLogsCards(5, fuelViewModel, Modifier.padding(innerPadding))
+                        Column(
+                            modifier = Modifier
+                                .padding(innerPadding)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+
+
+                        ) {
+                            LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))
+                            LatestFuelLogsCards(5, fuelViewModel, Modifier.padding(innerPadding))
+                        }
                     }
                 }
         }
@@ -111,7 +121,7 @@ fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: Mainten
         Modifier.background(
             color = MaterialTheme.colorScheme.secondaryContainer,
             shape = RoundedCornerShape(16.dp)
-        )
+        ).fillMaxWidth()
     ) {
         Column(
             modifier = modifier
@@ -120,30 +130,25 @@ fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: Mainten
                 Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 return
             } else {
-                Text("Latest maintenance logs:", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(count = maintenanceGridColumns),
+                Text("Latest maintenance logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Row(
                     Modifier.padding(8.dp)
                 ){
                     val modifier = Modifier.padding(8.dp)
-                    items(1) {
-                        Text("Item", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
-                    items(1) {
-                        if (DISTANCE_UNIT == "km")
-                            Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        else
-                            Text("Mileage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Item", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Mileage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
 
-                    }
-                    items(1) {
-                        Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
+                    Text("Date", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
 
                 }
             }
             latestMaintenanceLogs.forEach { maintenanceLog ->
-                MaintenanceLogCard(maintenanceLog)
+                Row() {
+                    MaintenanceLogCard(maintenanceLog)
+                }
             }
         }
     }
@@ -210,22 +215,12 @@ fun dummyLatestMaintenanceLogs(): List<MaintenanceLog> {
 fun MaintenanceLogCard(maintenanceLog: MaintenanceLog) {
     val modifier = Modifier.padding(8.dp)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(count = maintenanceGridColumns),
-        verticalArrangement = Arrangement.Center,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(8.dp)
+    Row(
     ) {
-        items(1) {
-            Text(maintenanceLog.itemChanged, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(maintenanceLog.itemChanged, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatter.format(maintenanceLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
-        items(count=1) {
-            Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(count=1) {
-            Text(formatter.format(maintenanceLog.date), modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-    }
 }
 
 
@@ -396,7 +391,7 @@ fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifi
         Modifier.background(
             color = MaterialTheme.colorScheme.secondaryContainer,
             shape = RoundedCornerShape(16.dp)
-        )
+        ).fillMaxWidth()
     ) {
         Column(
             modifier = modifier
@@ -405,70 +400,48 @@ fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifi
                 Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 return
             } else {
-                Text("Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(count = fuelGridColumns),
-                    Modifier.padding(8.dp)
+                Text("Latest Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(8.dp)
                 ){
                     val modifier = Modifier.padding(8.dp)
-                    items(1) {
-                        Text("Station name", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
-                    items(1) {
-                        if (LIQUID_UNIT == "l")
-                            Text("Litres", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        else
-                            Text("Gallons", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
-                    items(1) {
-                        Text("Full", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
-                    items(1) {
-                        if (DISTANCE_UNIT == "km")
-                            Text("Kilometrage", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        else
-                            Text("Miles", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
-                    items(1) {
-                        Text("Date", modifier = modifier, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
+                    Text("Station name", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (LIQUID_UNIT == "l")
+                        Text("Litres", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Gallons", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Miles", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Date", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Full", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
             latestFuelLogs.forEach { fuelLog ->
-                FuelLogCard(fuelLog, fuelViewModel)
+                FuelLogCard(fuelLog)
             }
         }
     }
 }
 
 @Composable
-fun FuelLogCard(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
+fun FuelLogCard(fuelLog: FuelLog) {
     val modifier = Modifier.padding(8.dp)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(count = fuelGridColumns),
-        verticalArrangement = Arrangement.Center,
+    Row(
         horizontalArrangement = Arrangement.Center,
         modifier = Modifier.padding(8.dp)
     ) {
-        items(1) {
-            Text(fuelLog.stationName, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(1) {
-            Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(1) {
-            if (fuelLog.isTankFull)
-                Icon(Icons.Outlined.Check, contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
-            else
-                Icon(Icons.Outlined.Cancel, contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(1) {
-            Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-        items(1) {
-            Text(formatter.format(fuelLog.date), modifier = modifier, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
+        Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatter.format(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        if (fuelLog.isTankFull)
+            Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        else
+            Icon(Icons.Outlined.Cancel, modifier = modifier.weight(1f), contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
     }
 }
 
