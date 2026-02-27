@@ -17,7 +17,6 @@ class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : V
     private val _formState = MutableStateFlow(MaintenanceLogFormState())
     val formState: StateFlow<MaintenanceLogFormState> = _formState
 
-
     fun getLatestMaintenanceLogs(amount: Int): Flow<List<MaintenanceLog>> {
         return maintenanceLogDao.getLatestLogs(amount)
     }

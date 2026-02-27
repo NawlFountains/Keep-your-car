@@ -1,24 +1,27 @@
-package com.nawl.carmaintenanceapp.view
+package com.nawl.carmaintenanceapp.view.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -41,206 +44,281 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.nawl.carmaintenanceapp.MainApplication
-import com.nawl.carmaintenanceapp.model.entities.FuelLog
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
-import com.nawl.carmaintenanceapp.model.entities.TripLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
-import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
-import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
 import com.nawl.carmaintenanceapp.viewmodel.TripViewModel
-import com.nawl.carmaintenanceapp.viewmodel.TripViewModelFactory
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.nawl.carmaintenanceapp.view.ConvertToCurrentDistanceUnit
+import com.nawl.carmaintenanceapp.view.ConvertToCurrentLiquidUnit
+import com.nawl.carmaintenanceapp.view.DISTANCE_UNIT
+import com.nawl.carmaintenanceapp.view.LIQUID_UNIT
+import com.nawl.carmaintenanceapp.view.LocalCurrentKilometrage
+import com.nawl.carmaintenanceapp.view.formatToUTC
+import com.nawl.carmaintenanceapp.viewmodel.MainViewModel
+
 import java.sql.Date
-import kotlin.collections.forEach
 
 @Composable
 fun HomeScreen(
+    mainViewModel: MainViewModel
 ) {
-    val context = LocalContext.current
-    val application = context.applicationContext as MainApplication
-
-    val maintenanceViewModel: MaintenanceViewModel = viewModel(
-        factory = MaintenanceViewModelFactory(application.database.maintenanceLogDao())
-    )
-    val tripViewModel: TripViewModel = viewModel(
-        factory = TripViewModelFactory(application.database.tripLogDao())
-    )
-    val fuelViewModel: FuelViewModel = viewModel(
-        factory = FuelViewModelFactory(application.database.fuelLogDao())
-    )
+    val maintenanceViewModel = mainViewModel.maintenanceViewModel
+    val tripViewModel = mainViewModel.tripViewModel
+    val fuelViewModel = mainViewModel.fuelViewModel
+    val homeViewModel = mainViewModel.homeViewModel
 
 
-    Column(
-        modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
-    ) {
-        CarMaintenanceAppTheme {
-                Surface() {
-                    Scaffold(
-                        floatingActionButton = { MultiOptionPopUpButton(maintenanceViewModel, tripViewModel, fuelViewModel) },
-                        floatingActionButtonPosition = FabPosition.End
-                    ) { innerPadding ->
-                        Column(
+    CarMaintenanceAppTheme {
+            Surface() {
+                Scaffold(
+                    floatingActionButton = { MultiOptionPopUpButton(maintenanceViewModel, tripViewModel, fuelViewModel) },
+                    floatingActionButtonPosition = FabPosition.End
+                ) { innerPadding ->
+                    Column(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .padding(innerPadding)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            LatestMaintenanceLogsCards(5, maintenanceViewModel, Modifier.padding(innerPadding))
-                            LatestFuelLogsCards(5, fuelViewModel, Modifier.padding(innerPadding))
-                            LatestTripLogsCards(5, tripViewModel, Modifier.padding(innerPadding))
+                            StatusCard(fuelViewModel,Modifier.weight(1f))
+                            LatestMaintenanceLogsCards(2, maintenanceViewModel, Modifier
+                                .weight(2f))
                         }
+//                            LatestFuelLogsCards(5, fuelViewModel, Modifier.padding(innerPadding))
+//                            LatestTripLogsCards(5, tripViewModel, Modifier.padding(innerPadding))
                     }
                 }
+            }
+    }
+}
+
+@Composable
+fun StatusCard(
+    fuelViewModel: FuelViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp), // Add space between the cards inside
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CurrentKilometrageCard(Modifier.weight(1f))
+        LatestFuelLogCard(fuelViewModel, Modifier.weight(1f))
+    }
+}
+@Composable
+fun CurrentKilometrageCard(
+    modifier: Modifier = Modifier
+) {
+    val currentKilometrage = LocalCurrentKilometrage.current
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp).fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("Current Kilometrage", modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text(ConvertToCurrentDistanceUnit(currentKilometrage).toString()+" "+ DISTANCE_UNIT, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         }
     }
 }
+
+@Composable
+fun LatestFuelLogCard(fuelViewModel: FuelViewModel, modifier: Modifier = Modifier){
+    val latestFuelLogs by fuelViewModel.getLatestFuelLogs(1).collectAsState(initial = emptyList())
+    val latestFuelLog = latestFuelLogs.firstOrNull()
+
+    Card(
+        modifier = modifier.fillMaxSize(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp).fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (latestFuelLog == null) {
+                Text("Start adding fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
+            }
+            else {
+                Text("Latest refuel", modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text(ConvertToCurrentLiquidUnit(latestFuelLog.quantity).toString()+" "+ LIQUID_UNIT, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Text(formatToUTC(latestFuelLog.date), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            }
+        }
+    }
+}
+
 
 @Composable
 fun LatestMaintenanceLogsCards(maxLatestLogs: Int, maintenanceViewModel: MaintenanceViewModel, modifier: Modifier = Modifier) {
     val latestMaintenanceLogs by maintenanceViewModel.getLatestMaintenanceLogs(maxLatestLogs).collectAsState(initial = emptyList())
 
-    Box(
-        Modifier.background(
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = RoundedCornerShape(16.dp)
-        ).fillMaxWidth()
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     ) {
-        Column(
-            modifier = modifier
-        ) {
+        Column {
             if (latestMaintenanceLogs.isEmpty()) {
-                Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                return
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Start adding maintenance logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer, textAlign = TextAlign.Center)
+                }
             } else {
-                Text("Latest maintenance logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(8.dp)
-                ){
-                    val modifier = Modifier.padding(8.dp)
-                    Text("Item", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    if (DISTANCE_UNIT == "km")
-                        Text("Kilometrage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    else
-                        Text("Mileage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-
-                    Text("Date", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-
+                Text("Latest maintenance logs", modifier = Modifier.padding(12.dp).fillMaxWidth(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer, textAlign = TextAlign.Center)
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.padding(2.dp)
+                ) {
+                    MaintenanceLogCardTopRow()
+                    latestMaintenanceLogs.forEach { maintenanceLog ->
+                        MaintenanceLogCard(maintenanceLog)
+                    }
                 }
             }
-            latestMaintenanceLogs.forEach { maintenanceLog ->
-                MaintenanceLogCard(maintenanceLog)
-            }
+
         }
     }
 }
+@Composable
+fun MaintenanceLogCardTopRow() {
+    val modifier = Modifier.padding(horizontal = 8.dp)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
 
-fun dummyLatestMaintenanceLogs(): List<MaintenanceLog> {
-    val maintenanceLogs = listOf(
-        MaintenanceLog(
-            itemChanged = "Battery",
-            date = Date(2023, 1, 1),
-            kilometrage = 1633,
-            notes = "No notes"
-        ),
-        MaintenanceLog(
-            itemChanged = "Washer pump",
-            date = Date(2023, 1, 1),
-            kilometrage = 851923,
-            notes = "No notes"
-        ),
-        MaintenanceLog(
-            itemChanged = "Engine",
-            date = Date(2023, 1, 1),
-            kilometrage = 1633,
-            notes = "No notes"
-        ))
-    return maintenanceLogs
+        )
+    ){
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(8.dp)
+        ){
+            Text("Item", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            if (DISTANCE_UNIT == "km")
+                Text("Kilometrage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            else
+                Text("Mileage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+
+            Text("Date", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+
+        }}
 }
 
 @Composable
 fun MaintenanceLogCard(maintenanceLog: MaintenanceLog) {
-    val modifier = Modifier.padding(8.dp)
+    val modifier = Modifier.padding(horizontal = 8.dp)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            // Use a slightly different color to distinguish rows from the background
+            containerColor = Color.Transparent
+        )
+    ){
 
     Row(
-        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(8.dp)
     ) {
         Text(maintenanceLog.itemChanged, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(ConvertToCurrentDistanceUnit(maintenanceLog.kilometrage).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
         Text(formatToUTC(maintenanceLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        }
-}
-
-@Composable
-fun LatestTripLogsCards(maxLatestLogs: Int, tripViewModel: TripViewModel, modifier: Modifier = Modifier) {
-    val latestTripLogs by tripViewModel.getLatestTripLogs(maxLatestLogs).collectAsState(initial = emptyList())
-
-    Box(
-        Modifier.background(
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = RoundedCornerShape(16.dp)
-        ).fillMaxWidth()
-    ) {
-        Column(
-            modifier = modifier
-        ) {
-            if (latestTripLogs.isEmpty()) {
-                Text("Start adding trip logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                return
-            } else {
-                Text("Latest trip logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(8.dp)
-                ){
-                    val modifier = Modifier.padding(8.dp)
-                    Text("Origin", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text("Destination", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    if (DISTANCE_UNIT == "km")
-                        Text("Kilometrage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    else
-                        Text("Mileage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-
-                    Text("Date", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-
-                }
-            }
-            latestTripLogs.forEach { tripLog ->
-                TripLogCard(tripLog)
-            }
-        }
+     }
     }
 }
 
-@Composable
-fun TripLogCard(tripLog: TripLog) {
-    val modifier = Modifier.padding(8.dp)
-
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Text(tripLog.origin, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(tripLog.destination, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(ConvertToCurrentDistanceUnit(tripLog.distance).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatToUTC(tripLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-    }
-}
+//@Composable
+//fun LatestTripLogsCards(maxLatestLogs: Int, tripViewModel: TripViewModel, modifier: Modifier = Modifier) {
+//    val latestTripLogs by tripViewModel.getLatestTripLogs(maxLatestLogs).collectAsState(initial = emptyList())
+//
+//    Box(
+//        Modifier.background(
+//            color = MaterialTheme.colorScheme.secondaryContainer,
+//            shape = RoundedCornerShape(16.dp)
+//        ).fillMaxWidth()
+//    ) {
+//        Column(
+//            modifier = modifier
+//        ) {
+//            if (latestTripLogs.isEmpty()) {
+//                Text("Start adding trip logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                return
+//            } else {
+//                Text("Latest trip logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                Row(
+//                    horizontalArrangement = Arrangement.Center,
+//                    modifier = Modifier.padding(8.dp)
+//                ){
+//                    val modifier = Modifier.padding(8.dp)
+//                    Text("Origin", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    Text("Destination", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    if (DISTANCE_UNIT == "km")
+//                        Text("Kilometrage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    else
+//                        Text("Mileage", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//
+//                    Text("Date", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//
+//                }
+//            }
+//            latestTripLogs.forEach { tripLog ->
+//                TripLogCard(tripLog)
+//            }
+//        }
+//    }
+//}
+//
+//@Composable
+//fun TripLogCard(tripLog: TripLog) {
+//    val modifier = Modifier.padding(8.dp)
+//
+//    Row(
+//        horizontalArrangement = Arrangement.Center,
+//        modifier = Modifier.padding(8.dp)
+//    ) {
+//        Text(tripLog.origin, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        Text(tripLog.destination, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        Text(ConvertToCurrentDistanceUnit(tripLog.distance).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        Text(formatToUTC(tripLog.date), modifier = modifier.weight(1f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//    }
+//}
 
 @Composable
 fun MultiOptionPopUpButton(
@@ -329,68 +407,68 @@ fun MultiOptionPopUpButton(
         }
     }
 }
-@Composable
-fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
-    val latestFuelLogs by fuelViewModel.getLatestFuelLogs(maxLatestLogs).collectAsState(initial = emptyList())
-
-    Box(
-        Modifier.background(
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = RoundedCornerShape(16.dp)
-        ).fillMaxWidth()
-    ) {
-        Column(
-            modifier = modifier,
-
-        ) {
-            if (latestFuelLogs.isEmpty()) {
-                Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                return
-            } else {
-                Text("Latest Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(8.dp)
-                ){
-                    val modifier = Modifier.padding(8.dp)
-                    Text("Station name", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    if (LIQUID_UNIT == "l")
-                        Text("Litres", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    else
-                        Text("Gallons", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    if (DISTANCE_UNIT == "km")
-                        Text("Kilometrage", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    else
-                        Text("Miles", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text("Date", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text("Full", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                }
-            }
-            latestFuelLogs.forEach { fuelLog ->
-                FuelLogCard(fuelLog)
-            }
-        }
-    }
-}
-
-@Composable
-fun FuelLogCard(fuelLog: FuelLog) {
-    val modifier = Modifier.padding(8.dp)
-
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatToUTC(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        if (fuelLog.isTankFull)
-            Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
-        else
-            Icon(Icons.Outlined.Cancel, modifier = modifier.weight(1f), contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
-    }
-}
+//@Composable
+//fun LatestFuelLogsCards(maxLatestLogs: Int, fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
+//    val latestFuelLogs by fuelViewModel.getLatestFuelLogs(maxLatestLogs).collectAsState(initial = emptyList())
+//
+//    Box(
+//        Modifier.background(
+//            color = MaterialTheme.colorScheme.secondaryContainer,
+//            shape = RoundedCornerShape(16.dp)
+//        ).fillMaxWidth()
+//    ) {
+//        Column(
+//            modifier = modifier,
+//
+//        ) {
+//            if (latestFuelLogs.isEmpty()) {
+//                Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                return
+//            } else {
+//                Text("Latest Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                Row(
+//                    horizontalArrangement = Arrangement.Center,
+//                    modifier = Modifier.padding(8.dp)
+//                ){
+//                    val modifier = Modifier.padding(8.dp)
+//                    Text("Station name", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    if (LIQUID_UNIT == "l")
+//                        Text("Litres", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    else
+//                        Text("Gallons", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    if (DISTANCE_UNIT == "km")
+//                        Text("Kilometrage", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    else
+//                        Text("Miles", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    Text("Date", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                    Text("Full", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+//                }
+//            }
+//            latestFuelLogs.forEach { fuelLog ->
+//                FuelLogCard(fuelLog)
+//            }
+//        }
+//    }
+//}
+//
+//@Composable
+//fun FuelLogCard(fuelLog: FuelLog) {
+//    val modifier = Modifier.padding(8.dp)
+//
+//    Row(
+//        horizontalArrangement = Arrangement.Center,
+//        modifier = Modifier.padding(8.dp)
+//    ) {
+//        Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        Text(formatToUTC(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+//        if (fuelLog.isTankFull)
+//            Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+//        else
+//            Icon(Icons.Outlined.Cancel, modifier = modifier.weight(1f), contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+//    }
+//}
 
 
 @Composable
@@ -454,7 +532,7 @@ fun TripLogForm (
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = DISTANCE_UNIT ,
+                text = DISTANCE_UNIT,
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
@@ -551,12 +629,17 @@ fun FuelLogForm(
     fuelViewModel: FuelViewModel
 ) {
     val formState by fuelViewModel.formState.collectAsState()
-
+    val currentKilometrage = LocalCurrentKilometrage.current
 
     var isTankFull by remember { mutableStateOf(false) }
     var notes by remember { mutableStateOf("") }
     var showDateMenu by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
+
+    LaunchedEffect(Unit) {
+        if (formState.kilometrage == 0)
+            fuelViewModel.onKilometrageChanged(currentKilometrage)
+    }
 
 
     Column(
@@ -744,6 +827,12 @@ fun MaintenanceLogForm(
     val datePickerState = rememberDatePickerState()
 
     val formState by maintenanceViewModel.formState.collectAsState()
+    val currentKilometrage = LocalCurrentKilometrage.current
+
+    LaunchedEffect(Unit) {
+        if (formState.kilometrage == 0)
+            maintenanceViewModel.onKilometrageChanged(currentKilometrage)
+    }
 
 
 

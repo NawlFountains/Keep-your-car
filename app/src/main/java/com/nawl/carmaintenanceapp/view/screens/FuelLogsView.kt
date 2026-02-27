@@ -1,4 +1,4 @@
-package com.nawl.carmaintenanceapp.view
+package com.nawl.carmaintenanceapp.view.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -26,6 +28,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,40 +54,41 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.model.entities.FuelLog
-import com.nawl.carmaintenanceapp.model.entities.TripLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
+import com.nawl.carmaintenanceapp.view.ConvertToCurrentDistanceUnit
+import com.nawl.carmaintenanceapp.view.ConvertToCurrentLiquidUnit
+import com.nawl.carmaintenanceapp.view.DISTANCE_UNIT
+import com.nawl.carmaintenanceapp.view.LIQUID_UNIT
+import com.nawl.carmaintenanceapp.view.formatToUTC
 import com.nawl.carmaintenanceapp.viewmodel.FuelViewModel
-import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
-import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
-import com.nawl.carmaintenanceapp.viewmodel.TripViewModel
-import com.nawl.carmaintenanceapp.viewmodel.TripViewModelFactory
+import com.nawl.carmaintenanceapp.viewmodel.FuelViewModelFactory
+import com.nawl.carmaintenanceapp.viewmodel.MainViewModel
 import java.sql.Date
 
 @Composable
-fun TripLogsScreen() {
+fun FuelLogsScreen(
+    mainViewModel: MainViewModel
+) {
+    val fuelViewModel = mainViewModel.fuelViewModel
 
-    val context = LocalContext.current
-    val application = context.applicationContext as MainApplication
-    val tripViewModel: TripViewModel = viewModel(
-        factory = TripViewModelFactory(application.database.tripLogDao())
-    )
     Column(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
         CarMaintenanceAppTheme {
             Scaffold(
-                floatingActionButton = { AddTripLogPopUpButton(tripViewModel) },
+                floatingActionButton = { AddFuelLogPopUpButton(fuelViewModel) },
                 floatingActionButtonPosition = FabPosition.End
             ) { innerPadding ->
-                Text("Trip Logs", modifier = Modifier.padding(innerPadding))
-                TripLogsList(5,tripViewModel, Modifier.padding(innerPadding))
+                Text("Fuel Logs", modifier = Modifier.padding(innerPadding))
+                FuelLogsList(fuelViewModel, Modifier.padding(innerPadding))
             }
         }
     }
 }
+
 @Composable
-fun TripLogsList(maxLatestLogs: Int, tripViewModel: TripViewModel, modifier: Modifier = Modifier) {
-    val latestTripLogs by tripViewModel.getLatestTripLogs(maxLatestLogs).collectAsState(initial = emptyList())
+fun FuelLogsList(fuelViewModel: FuelViewModel, modifier: Modifier = Modifier) {
+    val latestFuelLogs by fuelViewModel.getLatestFuelLogs(4).collectAsState(initial = emptyList())
 
     Box(
         Modifier.background(
@@ -95,61 +99,65 @@ fun TripLogsList(maxLatestLogs: Int, tripViewModel: TripViewModel, modifier: Mod
         Column(
             modifier = modifier
         ) {
-            if (latestTripLogs.isEmpty()) {
-                Text("Start adding trip logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            if (latestFuelLogs.isEmpty()) {
+                Text("Start adding Fuel logs!", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 return
             } else {
-                Text("Trip logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Text("Fuel logs", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(8.dp)
                 ){
                     val modifier = Modifier.padding(8.dp)
-                    Text("Origin", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text("Destination", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Station name", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (LIQUID_UNIT == "l")
+                        Text("Litres", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else
+                        Text("Gallons", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     if (DISTANCE_UNIT == "km")
                         Text("Kilometrage", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     else
-                        Text("Mileage", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-
+                        Text("Miles", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     Text("Date", modifier = modifier.weight(2f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text("Full", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     Text("", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     Text("", modifier = modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
-            latestTripLogs.forEach { tripLog ->
-                TripLogEditableCard(tripLog, tripViewModel)
+            latestFuelLogs.forEach { fuelLog ->
+                FuelLogEditableCard(fuelLog, fuelViewModel)
             }
         }
     }
 }
 
 @Composable
-fun TripLogEditableCard(tripLog: TripLog, tripViewModel: TripViewModel) {
+fun FuelLogEditableCard(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
     val modifier = Modifier.padding(8.dp)
 
     Row(
         horizontalArrangement = Arrangement.Center,
         modifier = Modifier.padding(8.dp)
     ) {
-        Text(tripLog.origin, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(tripLog.destination, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(ConvertToCurrentDistanceUnit(tripLog.distance).toString() + " " + DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Text(formatToUTC(tripLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Column(
-            modifier =Modifier.weight(1f)
-        ) {
-            EditTripLogButton(tripLog, tripViewModel)
+        Text(fuelLog.stationName, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(String.format("%.2f", ConvertToCurrentLiquidUnit(fuelLog.quantity))+" "+ LIQUID_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(ConvertToCurrentDistanceUnit(fuelLog.kilometrage).toString()+" "+ DISTANCE_UNIT, modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(formatToUTC(fuelLog.date), modifier = modifier.weight(2f), color = MaterialTheme.colorScheme.onSecondaryContainer)
+        if (fuelLog.isTankFull)
+            Icon(Icons.Outlined.Check, modifier = modifier.weight(1f), contentDescription = "Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        else
+            Icon(Icons.Outlined.Cancel, modifier = modifier.weight(1f), contentDescription = "Not Full", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        Column( modifier =Modifier.weight(1f)) {
+            EditFuelLogButton(fuelLog, fuelViewModel)
         }
-        Column(
-            modifier =Modifier.weight(1f)
-        ) {
-            DeleteTripLogButton(tripLog, tripViewModel)
+        Column( modifier =Modifier.weight(1f)) {
+            DeleteFuelLogButton(fuelLog, fuelViewModel)
         }
     }
 }
+
 @Composable
-fun DeleteTripLogButton(tripLog: TripLog, tripViewModel: TripViewModel) {
+fun DeleteFuelLogButton(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
     var showConfirmationForm by remember { mutableStateOf(false) }
 
     Button(
@@ -170,9 +178,9 @@ fun DeleteTripLogButton(tripLog: TripLog, tripViewModel: TripViewModel) {
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                DeleteTripLogConfirmationForm(
-                    tripLog = tripLog,
-                    tripViewModel = tripViewModel,
+                DeleteFuelLogConfirmationForm(
+                    fuelLog = fuelLog,
+                    fuelViewModel = fuelViewModel,
                     onDismiss = { showConfirmationForm = false })
             }
         }
@@ -181,9 +189,9 @@ fun DeleteTripLogButton(tripLog: TripLog, tripViewModel: TripViewModel) {
 }
 
 @Composable
-fun DeleteTripLogConfirmationForm(
-    tripLog: TripLog,
-    tripViewModel: TripViewModel,
+fun DeleteFuelLogConfirmationForm(
+    fuelLog: FuelLog,
+    fuelViewModel: FuelViewModel,
     onDismiss: () -> Unit
 ) {
     Column(
@@ -214,7 +222,7 @@ fun DeleteTripLogConfirmationForm(
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
                 onClick = {
-                    tripViewModel.deleteTripLog(tripLog)
+                    fuelViewModel.deleteFuelLog(fuelLog)
                     onDismiss()
                 }) {
                 Text("Delete")
@@ -222,8 +230,9 @@ fun DeleteTripLogConfirmationForm(
         }
     }
 }
+
 @Composable
-fun EditTripLogButton(tripLog: TripLog, tripViewModel: TripViewModel) {
+fun EditFuelLogButton(fuelLog: FuelLog, fuelViewModel: FuelViewModel) {
     var showEditForm by remember { mutableStateOf(false) }
 
     Button(
@@ -236,7 +245,7 @@ fun EditTripLogButton(tripLog: TripLog, tripViewModel: TripViewModel) {
         onClick = {
             showEditForm = true
         }) {
-        Icon(Icons.Filled.Edit, contentDescription = "Edit", modifier = Modifier.fillMaxWidth())
+        Icon(Icons.Filled.Edit, contentDescription = "Delete", modifier = Modifier.fillMaxWidth())
     }
     if (showEditForm) {
         Dialog(onDismissRequest = { showEditForm = false }) {
@@ -244,32 +253,36 @@ fun EditTripLogButton(tripLog: TripLog, tripViewModel: TripViewModel) {
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                TripLogEditableForm(
-                    tripLog = tripLog,
-                    tripViewModel = tripViewModel,
+                FuelLogEditableForm(
+                    fuelLog = fuelLog,
+                    fuelViewModel = fuelViewModel,
                     onDismiss = { showEditForm = false })
             }
         }
 
     }
 }
-
 @Composable
-fun TripLogEditableForm (
-    tripLog: TripLog,
-    onDismiss: () -> Unit ,
-    tripViewModel: TripViewModel
+fun FuelLogEditableForm(
+    fuelLog: FuelLog,
+    onDismiss: () -> Unit,
+    fuelViewModel: FuelViewModel
 ) {
-    val formState by tripViewModel.formState.collectAsState()
+    val formState by fuelViewModel.formState.collectAsState()
 
+
+    var isTankFull by remember { mutableStateOf(false) }
+    var notes by remember { mutableStateOf("") }
     var showDateMenu by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    LaunchedEffect(tripLog) {
-        tripViewModel.onOriginChanged(tripLog.origin)
-        tripViewModel.onDestinationChanged(tripLog.destination)
-        tripViewModel.onDateChanged(tripLog.date)
-        tripViewModel.onDistanceChanged(tripLog.distance)
+    LaunchedEffect(fuelLog) {
+        fuelViewModel.onStationNameChanged(fuelLog.stationName)
+        fuelViewModel.onQuantityChanged(fuelLog.quantity)
+        fuelViewModel.onKilometrageChanged(fuelLog.kilometrage)
+        fuelViewModel.onDateChanged(fuelLog.date)
+        isTankFull = fuelLog.isTankFull
+        notes = fuelLog.notes
     }
 
 
@@ -278,59 +291,11 @@ fun TripLogEditableForm (
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "Edit Trip log",
+            "Edit fuel Log",
             modifier = Modifier.padding(bottom = 16.dp),
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.titleLarge
         )
-        TextField(
-            value = formState.origin,
-            onValueChange = { tripViewModel.onOriginChanged(it) },
-            isError = formState.originError != null,
-            label = { Text("From") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        formState.originError?.let {
-            Text(it, color = Color.Red)
-        }
-        TextField(
-            value = formState.destination,
-            onValueChange = { tripViewModel.onDestinationChanged(it)},
-            isError = formState.destinationError != null,
-            label = { Text("To") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        formState.destinationError?.let {
-            Text(it, color = Color.Red)
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TextField(
-                value = formState.distance.toString(),
-                onValueChange = { tripViewModel.onDistanceChanged(it.toIntOrNull() ?: 0) },
-                isError = formState.distanceError != null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                label = { Text("Distance") },
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = DISTANCE_UNIT ,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
-        formState.distanceError?.let {
-            Text(it, color = Color.Red)
-        }
         TextField(
             value = formatToUTC(formState.date),
             onValueChange = { },
@@ -357,7 +322,7 @@ fun TripLogEditableForm (
                 confirmButton = {
                     TextButton(onClick = {
                         showDateMenu = false
-                        tripViewModel.onDateChanged(datePickerState.selectedDateMillis?.let { Date(it) }!!)
+                        fuelViewModel.onDateChanged(datePickerState.selectedDateMillis?.let { Date(it) }!!)
                     }) {
                         Text("OK")
                     }
@@ -374,6 +339,90 @@ fun TripLogEditableForm (
         formState.dateError?.let {
             Text(it, color = Color.Red)
         }
+        TextField(
+            value = formState.stationName,
+            onValueChange = { fuelViewModel.onStationNameChanged(it) },
+            label = { Text("Station Name") },
+            isError = formState.stationNameError != null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
+
+        formState.stationNameError?.let {
+            Text(it, color = Color.Red)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = String.format("%.2f", ConvertToCurrentLiquidUnit(formState.quantity)),
+                onValueChange = { fuelViewModel.onQuantityChanged(it.toFloat()) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Text("Quantity") },
+                modifier = Modifier.weight(1f)
+            )
+            formState.quantityError?.let {
+                Text(it, color = Color.Red)
+            }
+
+            Text(
+                text = LIQUID_UNIT,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { isTankFull = !isTankFull }
+            ) {
+                RadioButton(
+                    selected = isTankFull,
+                    onClick = { isTankFull = !isTankFull }
+                )
+                Text("Full")
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = ConvertToCurrentDistanceUnit(formState.kilometrage).toString(),
+                onValueChange = {
+                    fuelViewModel.onKilometrageChanged(it.toIntOrNull() ?: 0)
+                },
+                label = {
+                    if (DISTANCE_UNIT == "km")
+                        Text("Kilometrage")
+                    else
+                        Text("Mileage")
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = DISTANCE_UNIT,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+        TextField(
+            value = notes,
+            onValueChange = { notes = it },
+            label = { Text("Notes") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -389,7 +438,7 @@ fun TripLogEditableForm (
                 ),
                 onClick = {
                     onDismiss()
-                    tripViewModel.resetFormState()
+                    fuelViewModel.resetFormState()
                 }) {
                 Text("Cancel")
             }
@@ -400,40 +449,40 @@ fun TripLogEditableForm (
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 onClick = {
-                    if (tripViewModel.validate()) {
-                        tripViewModel.editTripLog(tripLog.id, formState.origin, formState.destination, formState.date, formState.distance)
-                        tripViewModel.resetFormState()
+                    if (fuelViewModel.validate()) {
+                        fuelViewModel.editFuelLog(fuelLog.id, formState.stationName, formState.quantity, isTankFull, formState.date, formState.kilometrage, notes)
                         onDismiss()
+                        fuelViewModel.resetFormState()
                     }
                 }) {
-                Text("Edit")
+                Text("Log")
             }
         }
     }
 }
 
 @Composable
-fun AddTripLogPopUpButton(
-    tripViewModel: TripViewModel
+fun AddFuelLogPopUpButton(
+    fuelViewModel: FuelViewModel
 ) {
-    var showTripLogForm by remember { mutableStateOf(false) }
+    var showFuelLogForm by remember { mutableStateOf(false) }
     FloatingActionButton(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         onClick = {
-            showTripLogForm = true
+            showFuelLogForm = true
         }) {
         Icon(Icons.Filled.Add, contentDescription = "Add new item")
     }
-    if (showTripLogForm) {
-        Dialog(onDismissRequest = { showTripLogForm = false }) {
+    if (showFuelLogForm) {
+        Dialog(onDismissRequest = { showFuelLogForm = false }) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                TripLogForm(
-                    onDismiss = { showTripLogForm = false },
-                    tripViewModel = tripViewModel
+                FuelLogForm(
+                    onDismiss = { showFuelLogForm = false },
+                    fuelViewModel = fuelViewModel
                 )
             }
         }

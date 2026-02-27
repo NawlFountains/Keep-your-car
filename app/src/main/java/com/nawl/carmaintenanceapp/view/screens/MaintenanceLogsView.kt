@@ -1,4 +1,4 @@
-package com.nawl.carmaintenanceapp.view
+package com.nawl.carmaintenanceapp.view.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,17 +52,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
+import com.nawl.carmaintenanceapp.view.ConvertToCurrentDistanceUnit
+import com.nawl.carmaintenanceapp.view.DISTANCE_UNIT
+import com.nawl.carmaintenanceapp.view.formatToUTC
+import com.nawl.carmaintenanceapp.viewmodel.MainViewModel
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModel
 import com.nawl.carmaintenanceapp.viewmodel.MaintenanceViewModelFactory
 import java.sql.Date
 
 @Composable
-fun MaintenanceLogsScreen() {
-    val context = LocalContext.current
-    val application = context.applicationContext as MainApplication
-    val maintenanceViewModel: MaintenanceViewModel = viewModel(
-        factory = MaintenanceViewModelFactory(application.database.maintenanceLogDao())
-    )
+fun MaintenanceLogsScreen(
+    mainViewModel: MainViewModel
+) {
+    val maintenanceViewModel = mainViewModel.maintenanceViewModel
     Column(
         modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)
     ) {
@@ -436,7 +438,7 @@ fun AddMaintenanceLogPopUpButton(
             ) {
                 MaintenanceLogForm(
                     onDismiss = { showMaintenanceLogForm = false },
-                    maintenanceViewModel = maintenanceViewModel
+                    maintenanceViewModel = maintenanceViewModel,
                 )
             }
         }

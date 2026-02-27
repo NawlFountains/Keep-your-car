@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CarRepair
@@ -15,6 +16,9 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
@@ -22,20 +26,35 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.nawl.carmaintenanceapp.MainApplication
 import com.nawl.carmaintenanceapp.ui.theme.CarMaintenanceAppTheme
+import com.nawl.carmaintenanceapp.view.screens.FuelLogsScreen
+import com.nawl.carmaintenanceapp.view.screens.HomeScreen
+import com.nawl.carmaintenanceapp.view.screens.MaintenanceLogsScreen
+import com.nawl.carmaintenanceapp.view.screens.TripLogsScreen
 import java.sql.Date
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.roundToInt
+import com.nawl.carmaintenanceapp.viewmodel.MainViewModel
+import com.nawl.carmaintenanceapp.viewmodel.MainViewModelFactory
 
 class MainActivity : ComponentActivity() {
+
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModelFactory(application as MainApplication)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         setContent {
-            CarMaintenanceAppTheme {
-                NavBar()
+            val currentKilometrage by mainViewModel.homeViewModel.currentKilometrage.collectAsState(0)
+
+            CompositionLocalProvider(LocalCurrentKilometrage provides currentKilometrage){
+                CarMaintenanceAppTheme {
+                    NavBar(mainViewModel)
+                }
             }
         }
     }
@@ -95,10 +114,8 @@ sealed class Screen(
     object FuelLogs : Screen("fuel logs", Icons.Default.LocalGasStation)
 }
 
-//TODO fix timezone showing a day before
-
 @Composable
-fun NavBar(){
+fun NavBar(mainViewModel: MainViewModel){
     val navController = rememberNavController()
 
     Scaffold(
@@ -114,16 +131,16 @@ fun NavBar(){
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                HomeScreen()
+                HomeScreen(mainViewModel)
             }
             composable(Screen.MaintenanceLogs.route) {
-                MaintenanceLogsScreen()
+                MaintenanceLogsScreen(mainViewModel)
             }
             composable(Screen.TripLogs.route) {
-                TripLogsScreen()
+                TripLogsScreen(mainViewModel)
             }
             composable(Screen.FuelLogs.route) {
-                FuelLogsScreen()
+                FuelLogsScreen(mainViewModel)
             }
         }
     }

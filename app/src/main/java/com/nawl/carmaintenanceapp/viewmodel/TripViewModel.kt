@@ -20,6 +20,9 @@ class TripViewModel ( private val tripLogDao: TripLogDao) : ViewModel() {
     fun getLatestTripLogs(amount: Int): Flow<List<TripLog>> {
         return tripLogDao.getLatestLogs(amount)
     }
+    fun getTripsBetweenDates(startDate: Date, endDate: Date): Flow<List<TripLog>> {
+        return tripLogDao.getTripsBetween(startDate, endDate)
+    }
 
     fun addTripLog(origin: String, destination: String, date: Date, distance: Int) {
         val newLog = TripLog(
