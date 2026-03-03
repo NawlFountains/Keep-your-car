@@ -12,7 +12,7 @@ import com.nawl.carmaintenanceapp.model.entities.FuelLog
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
 import com.nawl.carmaintenanceapp.model.entities.TripLog
 
-@Database(entities = [MaintenanceLog::class, FuelLog::class, TripLog::class], version = 6)
+@Database(entities = [MaintenanceLog::class, FuelLog::class, TripLog::class], version = 7)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun maintenanceLogDao(): MaintenanceLogDao

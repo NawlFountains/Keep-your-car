@@ -11,11 +11,12 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FuelLogDao {
-    @Query("SELECT * FROM fuel_logs")
+    @Query("SELECT * FROM fuel_logs ORDER BY date DESC")
     fun getAll(): Flow<List<FuelLog>>
 
     @Query("SELECT * FROM fuel_logs ORDER BY date DESC LIMIT :amount")
     fun getLatestLogs(amount: Int): Flow<List<FuelLog>>
+
 
     @Insert
     suspend fun insert(fuelLog: FuelLog)

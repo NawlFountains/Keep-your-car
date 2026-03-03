@@ -10,14 +10,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MaintenanceLogDao {
-    @Query("SELECT * FROM maintenance_log")
+    @Query("SELECT * FROM maintenance_log ORDER BY date DESC")
     fun getAll(): Flow<List<MaintenanceLog>>
 
     @Query("SELECT * FROM maintenance_log ORDER BY date DESC LIMIT :amount")
     fun getLatestLogs(amount: Int): Flow<List<MaintenanceLog>>
-
-    @Query("SELECT * FROM maintenance_log WHERE item_changed = :itemChanged and date = :date")
-    fun getByItemChangedAndDate(itemChanged: String, date: String): MaintenanceLog?
 
     @Query("SELECT * FROM maintenance_log WHERE date = :date")
     fun getByDate(date: Long): List<MaintenanceLog>
