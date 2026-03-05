@@ -9,20 +9,8 @@ import com.nawl.carmaintenanceapp.model.entities.Item
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ItemDao {
+interface ItemDao: BaseDao<Item> {
 
     @Query("SELECT * FROM item")
     fun getAll(): Flow<List<Item>>
-
-    @Insert
-    suspend fun insert(item: Item)
-
-    @Insert
-    suspend fun insertAll(vararg items: Item)
-
-    @Update
-    suspend fun update(item: Item)
-
-    @Delete
-    suspend fun delete(item: Item)
 }

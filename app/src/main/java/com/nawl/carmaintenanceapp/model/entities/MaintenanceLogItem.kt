@@ -21,6 +21,6 @@ import androidx.room.ForeignKey
     ])
 
 data class MaintenanceLogItem(
-    @ColumnInfo(name = "maintenance_log_id") val maintenanceLogId: Int,
-    @ColumnInfo(name = "item_id") val itemId: Int,
+    @ColumnInfo(name = "maintenance_log_id") val maintenanceLogId: Long,
+    @ColumnInfo(name = "item_id") val itemId: Long,
 )

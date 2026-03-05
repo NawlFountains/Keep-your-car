@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nawl.carmaintenanceapp.formstate.MaintenanceLogFormState
 import com.nawl.carmaintenanceapp.model.dao.MaintenanceLogDao
 import com.nawl.carmaintenanceapp.model.entities.MaintenanceLog
+import com.nawl.carmaintenanceapp.model.repository.MaintenanceLogRepository
 import com.nawl.carmaintenanceapp.view.ConvertToMetricDistanceUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,22 +14,24 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.sql.Date
 
-class MaintenanceViewModel(private val maintenanceLogDao: MaintenanceLogDao) : ViewModel() {
+class MaintenanceViewModel(private val repository: MaintenanceLogRepository) : ViewModel() {
     private val _formState = MutableStateFlow(MaintenanceLogFormState())
     val formState: StateFlow<MaintenanceLogFormState> = _formState
 
-    fun getLatestMaintenanceLogs(amount: Int): Flow<List<MaintenanceLog>> {
-        return maintenanceLogDao.getLatestLogs(amount)
-    }
-
-    fun addMaintenanceLog(itemChanged: String, date: Date, kilometrage: Int, notes: String) {
-        val newLog = MaintenanceLog(
-            itemChanged = itemChanged,
-            date = date,
-            kilometrage = ConvertToMetricDistanceUnit(kilometrage),
-            notes = notes
-        )
+    fun addMaintenanceLog(
+        item: String,
+        date: Date,
+        kilometrage: Int,
+        notes: String
+    ) {
         viewModelScope.launch {
+            val newLog = MaintenanceLog(
+                item = item,
+                date = date,
+                kilometrage = ConvertToMetricDistanceUnit(kilometrage),
+                notes = notes
+            )
+
             maintenanceLogDao.insert(newLog)
         }
     }

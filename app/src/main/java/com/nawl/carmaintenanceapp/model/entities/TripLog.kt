@@ -36,10 +36,10 @@ import java.sql.Date
     ]
 )
 data class TripLog (
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    @ColumnInfo(name = "vehicle_id") val vehicleId: Int,
-    @ColumnInfo(name = "origin_location_id") val originLocationId: Int,
-    @ColumnInfo(name = "destination_location_id") val destinationLocationId: Int,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "vehicle_id") val vehicleId: Long,
+    @ColumnInfo(name = "origin_location_id") val originLocationId: Long,
+    @ColumnInfo(name = "destination_location_id") val destinationLocationId: Long,
     @ColumnInfo(name = "distance_km") val distanceKm: Int,
     @ColumnInfo(name = "date") val date: Date
 )

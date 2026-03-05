@@ -9,23 +9,16 @@ import com.nawl.carmaintenanceapp.model.entities.MaintenanceLogItem
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface MaintenanceLogItemDao {
+interface MaintenanceLogItemDao: BaseDao<MaintenanceLogItem> {
     @Query("SELECT * FROM maintenance_log_item")
     fun getAll(): Flow<List<MaintenanceLogItem>>
 
     @Query("SELECT * FROM maintenance_log_item WHERE maintenance_log_id = :maintenanceLogId")
     fun getItemsByMaintenanceLogId(maintenanceLogId: Int): Flow<List<MaintenanceLogItem>>
+    @Query("DELETE FROM maintenance_log_item WHERE maintenance_log_id = :maintenanceLogId")
+    suspend fun deleteByMaintenanceLogId(maintenanceLogId: Int)
 
-    @Insert
-    suspend fun insert(maintenanceLogItem: MaintenanceLogItem)
+    @Query("DELETE FROM maintenance_log_item WHERE item_id = :itemId")
+    suspend fun deleteByItemId(itemId: Int)  // ← defined here
 
-    @Insert
-    fun insertAll(vararg maintenanceLogItems: MaintenanceLogItem)
-
-    @Update
-    suspend fun update (maintenanceLogItem: MaintenanceLogItem)
-
-
-    @Delete
-    suspend fun delete (maintenanceLogItem: MaintenanceLogItem)
 }

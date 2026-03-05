@@ -20,8 +20,8 @@ import java.sql.Date
     ]
 )
 data class MaintenanceLog(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    @ColumnInfo(name = "vehicle_id") val vehicleId: Int,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "vehicle_id") val vehicleId: Long,
     @ColumnInfo(name = "date") val date: Date,
     @ColumnInfo(name = "kilometrage") val kilometrage: Int,
     @ColumnInfo(name = "notes") val notes: String

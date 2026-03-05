@@ -8,7 +8,7 @@ import java.sql.Date
 
 @Entity (tableName = "location")
 data class Location(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "lat") val lat: Float,
     @ColumnInfo(name = "lon") val lon: Float,

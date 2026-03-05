@@ -29,9 +29,9 @@ import java.sql.Date
     ]
 )
 data class FuelLog (
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    @ColumnInfo(name = "vehicle_id") val vehicleId: Int,
-    @ColumnInfo(name = "station_location_id") val stationId: String,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "vehicle_id") val vehicleId: Long,
+    @ColumnInfo(name = "station_location_id") val stationId: Long,
     @ColumnInfo(name = "fuel_litres") val quantity: Float,
     @ColumnInfo(name = "is_tank_full") val isTankFull: Boolean,
     @ColumnInfo(name = "kilometrage") val kilometrage: Int,

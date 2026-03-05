@@ -7,6 +7,6 @@ import java.sql.Date
 
 @Entity (tableName = "item")
 data class Item(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "name") val name: String
 )
